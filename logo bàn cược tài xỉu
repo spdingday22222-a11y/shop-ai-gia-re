@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bàn Cược Xanh Nước Biển</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: #0b1325;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* KHUNG BÀN CƯỢC BO TRÒN TUYỆT ĐỐI 2 ĐẦU */
+        .poker-table {
+            position: relative;
+            width: 900px;
+            height: 400px;
+            /* Tỷ lệ border-radius bằng một nửa chiều cao giúp 2 đầu tròn xoe thực thụ */
+            border-radius: 200px; 
+            background: radial-gradient(circle, #1a5b8c 0%, #0d3859 70%, #062138 100%);
+            border: 16px solid #08192d;
+            box-shadow: 
+                0 0 0 4px #1e456e,
+                0 20px 50px rgba(0, 0, 0, 0.8),
+                inset 0 0 30px rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Đường viền dải lụa trang trí bên trong bàn */
+        .table-inner-line {
+            position: absolute;
+            width: calc(100% - 40px);
+            height: calc(100% - 40px);
+            border-radius: 180px;
+            border: 2px dashed rgba(255, 255, 255, 0.25);
+            pointer-events: none;
+        }
+
+        /* LOGO CHÍNH GIỮA BÀN */
+        .table-logo {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.85;
+            pointer-events: none;
+        }
+
+        .logo-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-weight: bold;
+            font-size: 28px;
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.5);
+        }
+
+        .logo-text {
+            margin-top: 8px;
+            color: #70bffe;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+        }
+
+        /* KHU VỰC CƯỢC 2 BÊN */
+        .betting-sides {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            z-index: 2;
+        }
+
+        .bet-zone {
+            width: 220px;
+            height: 140px;
+            background: rgba(10, 35, 60, 0.6);
+            border: 2px solid #00d2ff;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: inset 0 0 15px rgba(0, 210, 255, 0.2);
+        }
+
+        .bet-zone:hover {
+            background: rgba(0, 210, 255, 0.15);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.4);
+        }
+
+        .bet-zone:active {
+            transform: scale(0.98);
+        }
+
+        .zone-title {
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .chip-container {
+            display: flex;
+            gap: 5px;
+            min-height: 40px;
+            align-items: center;
+        }
+
+        /* LOGIC VÀ KIỂU DÁNG CHÍP CƯỢC */
+        .chip {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ffd700 40%, #ff8c00 100%);
+            border: 3px dashed #fff;
+            color: #000;
+            font-weight: bold;
+            font-size: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+            animation: dropChip 0.2s ease-out;
+        }
+
+        @keyframes dropChip {
+            0% { transform: translateY(-20px) scale(1.2); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        /* BẢNG ĐIỀU KHIỂN BÊN DƯỚI */
+        .controls {
+            position: absolute;
+            bottom: -70px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-reset {
+            padding: 10px 25px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .btn-reset:hover {
+            background: #c0392b;
+        }
+
+        .total-score {
+            position: absolute;
+            top: -50px;
+            color: #00d2ff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="poker-table">
+        <div class="total-score" id="total-score">Tổng tiền cược: 0$</div>
+        
+        <div class="table-inner-line"></div>
+
+        <!-- LOGO BÀN CƯỢC -->
+        <div class="table-logo">
+            <div class="logo-icon">♠</div>
+            <div class="logo-text">OCEAN CASINO</div>
+        </div>
+
+        <!-- HAI VÙNG CƯỢC 2 BÊN -->
+        <div class="betting-sides">
+            <!-- Bên Trái -->
+            <div class="bet-zone" onclick="placeBet('left')">
+                <div class="zone-title">PLAYER</div>
+                <div class="chip-container" id="chips-left"></div>
+            </div>
+
+            <!-- Bên Phải -->
+            <div class="bet-zone" onclick="placeBet('right')">
+                <div class="zone-title">BANKER</div>
+                <div class="chip-container" id="chips-right"></div>
+            </div>
+        </div>
+
+        <!-- NÚT ĐIỀU KHIỂN LOGIC -->
+        <div class="controls">
+            <button class="btn-reset" onclick="resetTable()">Hủy Cược / Đặt Lại</button>
+        </div>
+    </div>
+
+    <script>
+        // LOGIC BÀN CƯỢC
+        let totalBet = 0;
+        const chipValue = 10; // Mỗi lần click đặt 10$
+
+        function placeBet(side) {
+            const container = document.getElementById(`chips-${side}`);
+            
+            // Giới hạn tối đa 5 chip hiển thị mỗi bên để tránh tràn giao diện
+            if (container.children.length < 5) {
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.innerText = `$${chipValue}`;
+                container.appendChild(chip);
+
+                totalBet += chipValue;
+                updateTotal();
+            }
+        }
+
+        function resetTable() {
+            document.getElementById('chips-left').innerHTML = '';
+            document.getElementById('chips-right').innerHTML = '';
+            totalBet = 0;
+            updateTotal();
+        }
+
+        function updateTotal() {
+            document.getElementById('total-score').innerText = `Tổng tiền cược: ${totalBet}$`;
+        }
+    </script>
+</body>
+</html>

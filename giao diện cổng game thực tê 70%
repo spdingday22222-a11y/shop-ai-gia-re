@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cổng Game Thực Tế - Tài Xỉu Online Ultimate Pro</title>
+  <style>
+    /* Reset & Base */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #030206;
+      color: #e0e0e0;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Screen Transition Animation Core */
+    .app-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 1;
+    }
+
+    .app-screen.active {
+      display: flex;
+      opacity: 1;
+      z-index: 10;
+    }
+
+    /* ==========================================
+       1. MAN HINH LOADING TAI GAME (1% -> 100%)
+    ========================================== */
+    #loading-screen {
+      background: radial-gradient(circle at center, #1b0a2a 0%, #030108 100%);
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .loader-brand {
+      font-size: 32px;
+      font-weight: 900;
+      background: linear-gradient(180deg, #fff2a3 0%, #d4af37 50%, #aa7c11 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+      letter-spacing: 3px;
+      margin-bottom: 25px;
+      text-transform: uppercase;
+    }
+
+    .loader-box {
+      width: 320px;
+      height: 18px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(212, 175, 55, 0.5);
+      border-radius: 20px;
+      padding: 2px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
+      position: relative;
+    }
+
+    .loader-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ff0055, #ffd700);
+      border-radius: 20px;
+      transition: width 0.05s linear;
+      box-shadow: 0 0 10px #ffd700;
+    }
+
+    .loader-text {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #aaa;
+      font-weight: bold;
+    }
+
+    /* ==========================================
+       2. CONG GAME LOBBY
+    ========================================== */
+    .game-lobby {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle at center, #180d28 0%, #050308 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    /* Top Bar Header */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 24px;
+      background: rgba(12, 8, 20, 0.95);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+      z-index: 20;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px solid #ffd700;
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+      transition: transform 0.2s;
+    }
+    .avatar:active { transform: scale(0.92); }
+
+    .balance-box {
+      background: #0b0514;
+      border: 1px solid #ffd700;
+      border-radius: 20px;
+      padding: 4px 16px;
+      color: #ffd700;
+      font-weight: 800;
+      font-size: 15px;
+      box-shadow: inset 0 0 6px rgba(212, 175, 55, 0.3);
+      letter-spacing: 0.5px;
+    }
+
+    .top-nav {
+      display: flex;
+      gap: 20px;
+      font-weight: 700;
+      color: #8f82a7;
+      text-transform: uppercase;
+      font-size: 12px;
+    }
+
+    .top-nav span {
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 6px 12px;
+      border-radius: 12px;
+    }
+
+    .top-nav span:hover, .top-nav span.active {
+      color: #fff;
+      background: rgba(255, 215, 0, 0.15);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+    }
+
+    /* Header Action Buttons */
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-action {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      transition: transform 0.1s, filter 0.2s;
+    }
+    .btn-action:active { transform: scale(0.95); }
+    .btn-nap { background: linear-gradient(180deg, #00e676, #00897b); color: #fff; }
+    .btn-rut { background: linear-gradient(180deg, #ff5252, #c62828); color: #fff; }
+
+    /* Main Lobby Content */
+    .lobby-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      flex: 1;
+      gap: 20px;
+      overflow-x: auto;
+    }
+
+    .sidebar-left {
+      width: 220px;
+      background: rgba(14, 9, 22, 0.85);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      border-radius: 16px;
+      padding: 14px;
+      backdrop-filter: blur(8px);
+    }
+
+    .sidebar-title {
+      color: #ffd700;
+      font-size: 12px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+      padding-bottom: 6px;
+    }
+
+    .rank-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      margin-bottom: 10px;
+      color: #bbb;
+    }
+    .rank-item .win-amount { color: #00e676; font-weight: 700; }
+
+    /* GAME CARDS GRID (Sảnh ngoài) */
+    .game-grid {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .game-card {
+      width: 160px;
+      height: 220px;
+      border-radius: 22px;
+      border: 2px solid rgba(255, 215, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.7);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      position: relative;
+      overflow: hidden;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .game-card:hover {
+      transform: translateY(-6px) scale(1.02);
+      border-color: #ffd700;
+      box-shadow: 0 12px 30px rgba(255, 215, 0, 0.4);
+    }
+
+    .game-card:active { transform: scale(0.96); }
+
+    /* Logo Game Binh Ngoai Giao Dien */
+    .card-hot-taixiu {
+      background: linear-gradient(135deg, #800d1e 0%, #3a0007 100%);
+      border-color: #ff4d6d;
+    }
+
+    .card-md5-taixiu {
+      background: linear-gradient(135deg, #023e8a 0%, #001233 100%);
+      border-color: #00b4d8;
+    }
+
+    .card-quayhu {
+      background: linear-gradient(135deg, #6a040f 0%, #1a0003 100%);
+    }
+
+    .card-tag {
+      align-self: flex-start;
+      background: #ff0055;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 2px 8px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+      text-transform: uppercase;
+    }
+
+    .card-title-box {
+      text-align: center;
+    }
+
+    .card-title {
+      font-weight: 900;
+      font-size: 15px;
+      color: #fff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+      letter-spacing: 0.5px;
+    }
+
+    .card-sub {
+      font-size: 10px;
+      color: #ffd700;
+      font-weight: bold;
+      margin-top: 2px;
+    }
+
+    /* Bottom Bar Nav */
+    .bottom-bar {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background: rgba(8, 5, 14, 0.95);
+      padding: 10px 0;
+      border-top: 1px solid rgba(255, 215, 0, 0.2);
+    }
+
+    .bottom-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 11px;
+      color: #888;
+      cursor: pointer;
+      transition: 0.2s;
+      font-weight: bold;
+    }
+
+    .bottom-item:hover { color: #ffd700; }
+    .bottom-icon { font-size: 18px; margin-bottom: 2px; }
+
+    /* ==========================================
+       3. SANH GAME TRONG SANH REALISTIC 3D
+    ========================================== */
+    .arena-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle, #0e1e2b 0%, #03080d 100%);
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      perspective: 1000px;
+    }
+
+    .arena-screen.hot-theme {
+      background: radial-gradient(circle, #2b0e14 0%, #0d0305 100%);
+    }
+
+    .arena-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px;
+      background: rgba(0, 0, 0, 0.85);
+      border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+    }
+
+    .arena-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: #ffd700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .btn-back-lobby {
+      background: #c62828;
+      color: #fff;
+      border: 1px solid #ff5252;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn-back-lobby:active { transform: scale(0.92); }
+
+    /* Bàn Chơi 3D Camera Panning */
+    .arena-stage {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    /* Hiệu ứng Camera Panning Angle 3D */
+    .arena-stage.pan-angle {
+      transform: rotateX(22deg) rotateY(-8deg) scale(0.95);
+    }
+
+    /* Board Bàn Cược Oval */
+    .real-taixiu-board {
+      position: relative;
+      width: 720px;
+      height: 380px;
+      background: radial-gradient(circle, #102d3f 0%, #040e14 100%);
+      border: 3px solid #00b4d8;
+      border-radius: 190px;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), inset 0 0 25px rgba(0,180,216,0.3);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 45px;
+    }
+
+    .hot-theme .real-taixiu-board {
+      background: radial-gradient(circle, #3f1019 0%, #140407 100%);
+      border-color: #ff4d6d;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), inset 0 0 25px rgba(255,77,109,0.3);
+    }
+
+    /* Nút Tròn Chức Năng Bàn Chơi */
+    .circle-btn {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background: radial-gradient(circle, #183845, #08151c);
+      border: 1px solid #3a7893;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #83c5be;
+      font-size: 15px;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      z-index: 10;
+    }
+    .circle-btn:active { transform: scale(0.9); }
+    .circle-btn:hover { color: #fff; border-color: #00b4d8; }
+
+    .btn-chart { top: 60px; left: 40px; }
+    .btn-help { top: 135px; left: 20px; }
+    .btn-history { top: 210px; left: 40px; }
+    .btn-rank { top: 60px; right: 40px; }
+    .btn-cam { top: 135px; right: 20px; }
+    .btn-sound { top: 210px; right: 40px; }
+
+    /* Cửa Cược Oval Nằm Ngang */
+    .bet-side {
+      width: 180px;
+      height: 130px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border-radius: 65px;
+      background: rgba(5, 12, 18, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      transition: all 0.3s;
+    }
+
+    .bet-side.active-win {
+      border: 2px solid #00e676;
+      background: rgba(0, 230, 118, 0.15);
+      box-shadow: 0 0 20px rgba(0, 230, 118, 0.4);
+    }
+
+    .bet-title {
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #fff;
+    }
+
+    .player-count { font-size: 11px; color: #64ffda; margin-bottom: 2px; }
+    .bet-amount { font-size: 15px; font-weight: 800; color: #ffd700; }
+
+    .my-bet-tag {
+      font-size: 10px;
+      color: #ff5252;
+      background: rgba(0,0,0,0.85);
+      padding: 2px 10px;
+      border-radius: 10px;
+      border: 1px solid #ff5252;
+      margin-top: 3px;
+      display: none;
+    }
+
+    .btn-bet {
+      margin-top: 6px;
+      background: linear-gradient(180deg, #d4af37, #8a6d0b);
+      border: 1px solid #fff;
+      border-radius: 14px;
+      padding: 4px 18px;
+      color: #000;
+      font-size: 11px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+    .btn-bet:active { transform: scale(0.92); }
+
+    /* Đĩa Trung Tâm & Nắp Đậy Thực Tế */
+    .center-plate {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 160px;
+      height: 160px;
+      background: radial-gradient(circle, #151515 0%, #050505 100%);
+      border: 4px solid #1a2936;
+      border-radius: 50%;
+      box-shadow: 0 0 20px rgba(0,0,0,0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 5;
+    }
+
+    .center-plate.shaking {
+      animation: plateShake 0.08s infinite linear;
+    }
+
+    @keyframes plateShake {
+      0% { transform: translate(-50%, -50%) translate(0, 0); }
+      25% { transform: translate(-50%, -50%) translate(-3px, 2px); }
+      50% { transform: translate(-50%, -50%) translate(3px, -2px); }
+      75% { transform: translate(-50%, -50%) translate(-2px, -2px); }
+      100% { transform: translate(-50%, -50%) translate(2px, 3px); }
+    }
+
+    /* NAP DAY NAP CHE KET QUA (Bát đậy) */
+    .plate-lid {
+      position: absolute;
+      width: 154px;
+      height: 154px;
+      background: radial-gradient(circle at 30% 30%, #555, #111);
+      border: 3px solid #d4af37;
+      border-radius: 50%;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.8);
+      z-index: 20;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: grab;
+      transition: transform 0.4s ease, opacity 0.3s;
+    }
+
+    .plate-lid::after {
+      content: '✋ KÉO NẮP';
+      font-size: 10px;
+      font-weight: 900;
+      color: #ffd700;
+      background: rgba(0,0,0,0.6);
+      padding: 3px 8px;
+      border-radius: 10px;
+      border: 1px solid #ffd700;
+    }
+
+    .plate-lid.opened {
+      transform: translate(140px, -80px) rotate(45deg);
+      opacity: 0.8;
+    }
+
+    .timer-display {
+      font-size: 52px;
+      font-weight: 900;
+      color: #ffd700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    /* Khung Xúc Xắc 3D Lăn Thực Tế Phía Trước */
+    .dice-container {
+      display: none;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      perspective: 400px;
+      z-index: 10;
+    }
+
+    .dice {
+      width: 38px;
+      height: 38px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.6), 0 4px 10px rgba(0,0,0,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Lăn đảo cuộn nhanh 2 giây trước màn hình */
+    .dice.rolling-front {
+      animation: diceRollFront 0.12s infinite alternate ease-in-out;
+    }
+
+    @keyframes diceRollFront {
+      0% { transform: translateY(-12px) scale(1.1) rotateX(0deg); }
+      100% { transform: translateY(12px) scale(0.9) rotateX(360deg); }
+    }
+
+    .history-dots {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 4px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .dot { width: 11px; height: 11px; border-radius: 50%; }
+    .dot.tai { background: #fff; box-shadow: 0 0 5px #fff; }
+    .dot.xiu { background: #222; border: 1px solid #666; }
+
+    /* ==========================================
+       4. MODAL DIAL / POPUPS / CAC TRANG PHU
+    ========================================== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(6px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+
+    /* Modal Nạp / Rút / User / Cài Đặt */
+    .general-card {
+      width: 440px;
+      background: #0d081a;
+      border: 1.5px solid #ffd700;
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.95);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,215,0,0.2);
+      padding-bottom: 10px;
+    }
+
+    .card-title-text {
+      color: #ffd700;
+      font-weight: 900;
+      font-size: 16px;
+      text-transform: uppercase;
+    }
+
+    .btn-close-modal {
+      width: 30px;
+      height: 30px;
+      background: #c62828;
+      border-radius: 50%;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-weight: bold;
+      border: none;
+    }
+
+    /* Form Elements */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-label { font-size: 11px; color: #aaa; font-weight: bold; }
+    .form-input {
+      background: #000;
+      border: 1px solid #ffd700;
+      padding: 10px 14px;
+      border-radius: 16px;
+      color: #fff;
+      font-weight: bold;
+      outline: none;
+      font-size: 14px;
+    }
+
+    /* Grid Avatar Chon Nu / Sat Thu */
+    .avatar-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      max-height: 180px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+
+    .avatar-item {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 2px solid #444;
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .avatar-item.selected, .avatar-item:hover {
+      border-color: #ffd700;
+      transform: scale(1.08);
+      box-shadow: 0 0 10px #ffd700;
+    }
+
+    /* Tab Thanh Toan Nap/Rut */
+    .pay-tabs {
+      display: flex;
+      gap: 8px;
+    }
+    .pay-tab {
+      flex: 1;
+      padding: 8px;
+      background: #180d28;
+      border: 1px solid rgba(255,215,0,0.3);
+      border-radius: 14px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #aaa;
+    }
+    .pay-tab.active { background: #ffd700; color: #000; border-color: #ffd700; }
+
+    /* Modal Bet Bo Tron 100% */
+    .bet-modal {
+      width: 320px;
+      background: #0f0a1c;
+      border: 1px solid #ffd700;
+      border-radius: 28px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.95);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .bet-quick-btns {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .btn-quick {
+      background: #1e1333;
+      border: 1px solid #4a2b7a;
+      color: #ddd;
+      padding: 8px;
+      border-radius: 16px;
+      font-weight: bold;
+      font-size: 11px;
+      cursor: pointer;
+      text-align: center;
+      transition: 0.1s;
+    }
+    .btn-quick:active { transform: scale(0.94); background: #4a2b7a; }
+
+    .btn-submit-action {
+      background: linear-gradient(180deg, #00e676, #00897b);
+      border: none;
+      padding: 12px;
+      border-radius: 20px;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .btn-submit-action:active { transform: scale(0.96); }
+
+    /* TOAST BAN TIN NOTIFICATION */
+    .toast-msg {
+      position: fixed;
+      top: 25px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-60px);
+      background: rgba(10, 10, 10, 0.95);
+      border: 1px solid #ffd700;
+      color: #ffd700;
+      padding: 10px 24px;
+      border-radius: 24px;
+      font-weight: bold;
+      font-size: 13px;
+      z-index: 9999;
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+    }
+
+    .toast-msg.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast Thống Báo Thực Thụ -->
+  <div id="toast" class="toast-msg">Thông báo hệ thống</div>
+
+  <!-- 1. MAN HINH LOADING TAI GAME (1% -> 100%) -->
+  <div id="loading-screen" class="app-screen active">
+    <div class="loader-brand">TÀI XỈU ONLINE PRO</div>
+    <div class="loader-box">
+      <div class="loader-fill" id="loader-fill"></div>
+    </div>
+    <div class="loader-text" id="loader-text">Đang tải tài nguyên 1%...</div>
+  </div>
+
+  <!-- 2. MAN HINH SÀNH GAME CHÍNH -->
+  <div id="lobby-screen" class="app-screen game-lobby">
+    
+    <!-- Top Bar Header -->
+    <div class="top-bar">
+      <div class="user-info" onclick="openUserModal()">
+        <div class="avatar" id="main-avatar" style="background-image: url('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100');"></div>
+        <div>
+          <div style="font-size: 10px; color: #aaa; font-weight: bold;">VIP 6 • <span id="user-name-display" style="color:#fff;">Sát Thủ Pro</span></div>
+          <div class="balance-box" id="user-balance">57,300,755</div>
+        </div>
+      </div>
+
+      <div class="top-nav">
+        <span class="active">Tất Cả</span>
+        <span>Đối Chiến</span>
+        <span>Điện Tử</span>
+        <span>Quay Hũ</span>
+        <span>Online</span>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn-action btn-nap" onclick="openNapModal()">NẠP TIỀN</button>
+        <button class="btn-action btn-rut" onclick="openRutModal()">RÚT TIỀN</button>
+        <button class="btn-action" style="background:#333; color:#fff;" onclick="openSettingModal()">⚙️</button>
+      </div>
+    </div>
+
+    <!-- Lobby Content -->
+    <div class="lobby-content">
+      <div class="sidebar-left">
+        <div class="sidebar-title">🏆 VINH DANH JACKPOT</div>
+        <div class="rank-item"><span>User***92</span><span class="win-amount">+11,478,405</span></div>
+        <div class="rank-item"><span>Play***88</span><span class="win-amount">+19,717,617</span></div>
+        <div class="rank-item"><span>King***01</span><span class="win-amount">+16,240,920</span></div>
+        <div class="rank-item"><span>Vip***77</span><span class="win-amount">+35,100,000</span></div>
+      </div>
+
+      <!-- GAME GRID OUTSIDE LOBBY -->
+      <div class="game-grid">
+        
+        <!-- Logo Hot Tài Xỉu Cân Cửa -->
+        <div class="game-card card-hot-taixiu" onclick="enterArena('HOT_TAIXIU')">
+          <div class="card-tag">HOT</div>
+          <div class="card-title-box">
+            <div class="card-title">HOT TÀI XỈU</div>
+            <div class="card-sub">CÂN CỬA 3D</div>
+          </div>
+        </div>
+
+        <!-- Logo Tài Xỉu MD5 -->
+        <div class="game-card card-md5-taixiu" onclick="enterArena('MD5_TAIXIU')">
+          <div class="card-tag" style="background:#00b4d8;">MD5</div>
+          <div class="card-title-box">
+            <div class="card-title">TÀI XỈU MD5</div>
+            <div class="card-sub">MINH BẠCH 100%</div>
+          </div>
+        </div>
+
+        <!-- Logo Quay Hũ Nặn Xúc Xắc 3D -->
+        <div class="game-card card-quayhu" onclick="showToast('Chức năng Quay Hũ 3D đang mở rộng!')">
+          <div class="card-tag" style="background:#ffd700; color:#000;">SLOT</div>
+          <div class="card-title-box">
+            <div class="card-title">QUAY HŨ 3D</div>
+            <div class="card-sub">JACKPOT KHỦNG</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Bottom Bar -->
+    <div class="bottom-bar">
+      <div class="bottom-item" onclick="openHistoryBetsModal()"><span class="bottom-icon">📜</span>Lịch Sử Cược</div>
+      <div class="bottom-item"><span class="bottom-icon">⭐</span>Bảng Xếp Hạng</div>
+      <div class="bottom-item"><span class="bottom-icon">🎨</span>Vòng Quay</div>
+      <div class="bottom-item"><span class="bottom-icon">🎧</span>Hỗ Trợ</div>
+    </div>
+
+  </div>
+
+  <!-- 3. SANH GAME BEN TRONG (REALISTIC 3D ARENA) -->
+  <div id="arena-screen" class="arena-screen">
+    
+    <div class="arena-header">
+      <button class="btn-back-lobby" onclick="exitArena()">◄ RỜI SẢNH</button>
+      <div class="arena-title" id="arena-title-text">SẢNH TÀI XỈU MD5 REAL 3D</div>
+      <div class="balance-box" id="arena-balance">57,300,755</div>
+    </div>
+
+    <div class="arena-stage" id="arena-stage">
+      
+      <div class="real-taixiu-board">
+        
+        <!-- Circle Buttons Utility -->
+        <div class="circle-btn btn-chart" onclick="showToast('Thống kê cầu 100 phiên gần nhất')" title="Thống kê">📊</div>
+        <div class="circle-btn btn-help" onclick="showToast('Luật chơi: Tài (11-17), Xỉu (3-10)')" title="Hướng dẫn">?</div>
+        <div class="circle-btn btn-history" onclick="openHistoryBetsModal()" title="Lịch sử cược">📜</div>
+
+        <div class="circle-btn btn-rank" onclick="showToast('Bảng vinh danh top cao thủ')" title="Xếp hạng">🏆</div>
+        <div class="circle-btn btn-cam" onclick="toggleCamera3D()" title="Xoay Góc Nhìn 3D">🎥</div>
+        <div class="circle-btn btn-sound" id="sound-btn" onclick="toggleSound()" title="Âm thanh">🔊</div>
+
+        <!-- Cửa Cược TÀI (Oval) -->
+        <div class="bet-side" id="side-tai">
+          <div class="player-count">👤 <span id="tai-players">425</span></div>
+          <div class="bet-title">TÀI</div>
+          <div class="bet-amount" id="tai-amount">658,469,416</div>
+          <div class="my-bet-tag" id="my-tai-bet">Đã cược: 0</div>
+          <button class="btn-bet" onclick="openBetModal('TÀI')">CƯỢC</button>
+        </div>
+
+        <!-- Đĩa Trung Tâm & Nắp Bát Đậy Thực Tế -->
+        <div class="center-plate" id="center-plate">
+          
+          <!-- Bát Đậy Kết Quả (Drag/Click Nặn) -->
+          <div class="plate-lid" id="plate-lid" onclick="openPlateLid()"></div>
+
+          <div class="timer-display" id="timer">45</div>
+
+          <!-- 3 Xúc Xắc 3D Lăn Phía Trước Màn Hình -->
+          <div class="dice-container" id="dice-container">
+            <div class="dice" id="dice1"></div>
+            <div class="dice" id="dice2"></div>
+            <div class="dice" id="dice3"></div>
+          </div>
+
+        </div>
+
+        <!-- Cửa Cược XỈU (Oval) -->
+        <div class="bet-side" id="side-xiu">
+          <div class="player-count">👤 <span id="xiu-players">399</span></div>
+          <div class="bet-title">XỈU</div>
+          <div class="bet-amount" id="xiu-amount">790,656,149</div>
+          <div class="my-bet-tag" id="my-xiu-bet">Đã cược: 0</div>
+          <button class="btn-bet" onclick="openBetModal('XỈU')">CƯỢC</button>
+        </div>
+
+        <!-- Lịch Sử Cầu -->
+        <div class="history-dots" id="history-dots">
+          <div class="dot tai"></div><div class="dot xiu"></div>
+          <div class="dot tai"></div><div class="dot tai"></div>
+          <div class="dot xiu"></div><div class="dot xiu"></div>
+          <div class="dot tai"></div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ==========================================
+     4. MODAL DIALOGS (NẠP, RÚT, USER, CƯỢC, LỊCH SỬ)
+  ========================================== -->
+
+  <!-- MODAL USER & ĐỔI AVATAR (HOT GIRL / SÁT THỦ) -->
+  <div class="modal-overlay" id="user-modal">
+    <div class="general-card">
+      <div class="card-header">
+        <span class="card-title-text">THÔNG TIN TÀI KHOẢN</span>
+        <button class="btn-close-modal" onclick="closeModal('user-modal')">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tên hiển thị</label>
+        <input type="text" class="form-input" id="user-name-input" value="Sát Thủ Pro">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Chọn Avatar Hot Girl / Sát Thủ</label>
+        <div class="avatar-grid">
+          <!-- Avatars Hot Girl & Sat Thu Real URLs -->
+          <div class="avatar-item selected" onclick="selectAvatar(this, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100')" style="background-image: url('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100');"></div>
+          <div class="avatar-item" onclick="selectAvatar(this, 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100')" style="background-image: url('https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100');"></div>
+          <div class="avatar-item" onclick="selectAvatar(this, 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100')" style="background-image: url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100');"></div>
+          <div class="avatar-item" onclick="selectAvatar(this, 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100')" style="background-image: url('https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100');"></div>
+        </div>
+      </div>
+
+      <button class="btn-submit-action" onclick="saveUserProfile()">CẬP NHẬT THÔNG TIN</button>
+    </div>
+  </div>
+
+  <!-- MODAL NẠP TIỀN (THẺ CÀO, QR CODE) -->
+  <div class="modal-overlay" id="nap-modal">
+    <div class="general-card">
+      <div class="card-header">
+        <span class="card-title-text">CỔNG NẠP TIỀN TỰ ĐỘNG</span>
+        <button class="btn-close-modal" onclick="closeModal('nap-modal')">✕</button>
+      </div>
+
+      <div class="pay-tabs">
+        <div class="pay-tab active" onclick="switchPayTab(this, 'qr')">QUÉT MÃ QR</div>
+        <div class="pay-tab" onclick="switchPayTab(this, 'card')">THẺ CÀO</div>
+      </div>
+
+      <div id="pay-qr-body">
+        <div style="text-align:center; padding: 10px;">
+          <div style="background:#fff; padding:10px; display:inline-block; border-radius:12px;">
+            <svg width="120" height="120" viewBox="0 0 100 100"><rect width="100" height="100" fill="#fff"/><rect x="10" y="10" width="30" height="30" fill="#000"/><rect x="60" y="10" width="30" height="30" fill="#000"/><rect x="10" y="60" width="30" height="30" fill="#000"/><rect x="20" y="20" width="10" height="10" fill="#fff"/><rect x="70" y="20" width="10" height="10" fill="#fff"/><rect x="20" y="70" width="10" height="10" fill="#fff"/></svg>
+          </div>
+          <div style="font-size:12px; color:#ffd700; margin-top:8px; font-weight:bold;">Tự động cộng tiền trong 3 giây</div>
+        </div>
+      </div>
+
+      <div id="pay-card-body" style="display:none;" class="form-group">
+        <label class="form-label">Mã Thẻ Cào</label>
+        <input type="text" class="form-input" placeholder="Nhập mã thẻ...">
+        <label class="form-label" style="margin-top:8px;">Số Serit</label>
+        <input type="text" class="form-input" placeholder="Nhập số seri...">
+      </div>
+
+      <button class="btn-submit-action" onclick="confirmNapMoney()">XÁC NHẬN NẠP</button>
+    </div>
+  </div>
+
+  <!-- MODAL RÚT TIỀN THỰC TẾ -->
+  <div class="modal-overlay" id="rut-modal">
+    <div class="general-card">
+      <div class="card-header">
+        <span class="card-title-text">RÚT TIỀN VỀ TÀI KHOẢN</span>
+        <button class="btn-close-modal" onclick="closeModal('rut-modal')">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Số dư khả dụng: <span id="rut-balance-display" style="color:#ffd700;">57,300,755</span> VNĐ</label>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tên Ngân Hàng</label>
+        <input type="text" class="form-input" value="MB BANK - NH QUAN DOI">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Số Tài Khoản</label>
+        <input type="text" class="form-input" placeholder="Nhập số tài khoản...">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Số Tiền Cần Rút</label>
+        <input type="number" class="form-input" id="rut-amount-input" placeholder="Nhập số tiền...">
+      </div>
+
+      <button class="btn-submit-action" onclick="confirmRutMoney()">RÚT TIỀN NGAY</button>
+    </div>
+  </div>
+
+  <!-- MODAL CÀI ĐẶT AM THANH -->
+  <div class="modal-overlay" id="setting-modal">
+    <div class="general-card">
+      <div class="card-header">
+        <span class="card-title-text">CÀI ĐẶT HỆ THỐNG</span>
+        <button class="btn-close-modal" onclick="closeModal('setting-modal')">✕</button>
+      </div>
+
+      <div style="display:flex; justify-style:space-between; align-items:center; padding:10px 0;">
+        <span style="font-weight:bold; font-size:13px;">Âm thanh lắc hột & nặn bát</span>
+        <input type="checkbox" id="sound-toggle" checked onchange="toggleSound()" style="width:20px; height:20px;">
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CƯỢC BO TRÒN (KHÔNG HÌNH VUÔNG) -->
+  <div class="modal-overlay" id="bet-modal">
+    <div class="bet-modal">
+      <div style="text-align:center; color:#ffd700; font-weight:900; font-size:16px;" id="bet-modal-title">CƯỢC TÀI</div>
+      <input type="text" class="form-input" id="bet-input" value="50,000" style="text-align:center; font-size:18px;" readonly>
+      
+      <div class="bet-quick-btns">
+        <div class="btn-quick" onclick="addBetVal(10000)">10K</div>
+        <div class="btn-quick" onclick="addBetVal(50000)">50K</div>
+        <div class="btn-quick" onclick="addBetVal(100000)">100K</div>
+        <div class="btn-quick" onclick="addBetVal(500000)">500K</div>
+        <div class="btn-quick" onclick="addBetVal(1000000)">1M</div>
+        <div class="btn-quick" onclick="setAllIn()">Tất tay</div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:8px;">
+        <button class="btn-submit-action" style="flex:1;" onclick="confirmBet()">XÁC NHẬN</button>
+        <button class="btn-submit-action" style="flex:1; background:#c62828;" onclick="closeModal('bet-modal')">HỦY</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL LỊCH SỬ ĐẶT CƯỢC -->
+  <div class="modal-overlay" id="history-bets-modal">
+    <div class="general-card" style="width:500px;">
+      <div class="card-header">
+        <span class="card-title-text">LỊCH SỬ ĐẶT CƯỢC THỰC TẾ</span>
+        <button class="btn-close-modal" onclick="closeModal('history-bets-modal')">✕</button>
+      </div>
+
+      <div style="max-height:250px; overflow-y:auto;">
+        <table style="width:100%; font-size:11px; text-align:center; border-collapse:collapse;">
+          <thead>
+            <tr style="color:#ffd700; border-bottom:1px solid #444;">
+              <th style="padding:6px;">Phiên</th>
+              <th>Cửa</th>
+              <th>Đặt</th>
+              <th>Kết Quả</th>
+              <th>Thưởng</th>
+            </tr>
+          </thead>
+          <tbody id="history-bets-list">
+            <!-- Inject Lịch Sử Cược -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* Global State Data */
+    let userBalance = 57300755;
+    let selectedAvatarUrl = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+    let soundEnabled = true;
+    let isCamera3D = false;
+    
+    let currentArena = null;
+    let timeLeft = 45;
+    let isRolling = false;
+    let selectedBetType = null;
+    let selectedBetAmount = 50000;
+
+    let myBets = { TÀI: 0, XỈU: 0 };
+    let myHistoryLogs = [];
+    let currentSessionId = 984512;
+
+    let taiAmount = 658469416;
+    let xiuAmount = 790656149;
+    let taiPlayers = 425;
+    let xiuPlayers = 399;
+
+    // Web Audio Sound Generator (Không phụ thuộc file ngoài)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playDiceSound() {
+      if (!soundEnabled) return;
+      try {
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300 + Math.random() * 200, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+      } catch(e){}
+    }
+
+    // SVG Xúc Xắc Sắc Nét 3D
+    const diceSVGs = {
+      1: `<svg width="26" height="26" viewBox="0 0 100 100"><circle cx="50" cy="50" r="14" fill="#d50000"/></svg>`,
+      2: `<svg width="26" height="26" viewBox="0 0 100 100"><circle cx="28" cy="28" r="11" fill="#222"/><circle cx="72" cy="72" r="11" fill="#222"/></svg>`,
+      3: `<svg width="26" height="26" viewBox="0 0 100 100"><circle cx="25" cy="25" r="10" fill="#222"/><circle cx="50" cy="50" r="10" fill="#d50000"/><circle cx="75" cy="75" r="10" fill="#222"/></svg>`,
+      4: `<svg width="26" height="26" viewBox="0 0 100 100"><circle cx="28" cy="28" r="10" fill="#d50000"/><circle cx="72" cy="28" r="10" fill="#d50000"/><circle cx="28" cy="72" r="10" fill="#d50000"/><circle cx="72" cy="72" r="10" fill="#d50000"/></svg>`,
+      5: `<svg width="26" height="26" viewBox="0 0 100 100"><circle cx="25" cy="25" r="9" fill="#222"/><circle cx="75" cy="25" r="9" fill="#222"/><circle cx="50" cy="50" r="9" fill="#d50000"/><circle cx="25" cy="75" r="9" fill="#222"/><circle cx="75" cy="75" r="9" fill="#222"/></svg>`,
+      6: `<svg width="26" height="26" viewBox="0 0 100 100"><circle cx="28" cy="22" r="9" fill="#222"/><circle cx="72" cy="22" r="9" fill="#222"/><circle cx="28" cy="50" r="9" fill="#222"/><circle cx="72" cy="50" r="9" fill="#222"/><circle cx="28" cy="78" r="9" fill="#222"/><circle cx="72" cy="78" r="9" fill="#222"/></svg>`
+    };
+
+    function formatMoney(num) { return num.toLocaleString('en-US'); }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    /* 1. KHI MO WEBPAGE -> LOADING 1% DEN 100% HOAN TOAN KHONG KHUNG */
+    window.addEventListener('load', () => {
+      let percent = 1;
+      const fill = document.getElementById('loader-fill');
+      const text = document.getElementById('loader-text');
+
+      let timer = setInterval(() => {
+        percent += Math.floor(Math.random() * 8) + 2;
+        if (percent >= 100) {
+          percent = 100;
+          clearInterval(timer);
+          fill.style.width = '100%';
+          text.innerText = 'Tải game hoàn tất 100%!';
+          setTimeout(() => {
+            document.getElementById('loading-screen').classList.remove('active');
+            document.getElementById('lobby-screen').classList.add('active');
+          }, 400);
+        } else {
+          fill.style.width = percent + '%';
+          text.innerText = `Đang tải tài nguyên ${percent}%...`;
+        }
+      }, 40);
+    });
+
+    /* 2. CHUYỂN CẢNH SANH GAME INNER ARENA REAL 3D */
+    function enterArena(type) {
+      currentArena = type;
+      const screen = document.getElementById('arena-screen');
+      const title = document.getElementById('arena-title-text');
+      
+      if (type === 'HOT_TAIXIU') {
+        title.innerText = 'HOT TÀI XỈU CÂN CỬA 3D';
+        screen.classList.add('hot-theme');
+      } else {
+        title.innerText = 'SẢNH TÀI XỈU MD5 REAL 3D';
+        screen.classList.remove('hot-theme');
+      }
+
+      screen.style.display = 'flex';
+      setTimeout(() => screen.classList.add('active'), 10);
+      updateBalanceUI();
+    }
+
+    function exitArena() {
+      const screen = document.getElementById('arena-screen');
+      screen.classList.remove('active');
+      setTimeout(() => screen.style.display = 'none', 300);
+    }
+
+    /* 3. LOGIC DEM NGOAC & XÓC LĂN XÚC XẮC 2s TRƯỚC MÀN HÌNH */
+    setInterval(() => {
+      if (isRolling) return;
+
+      if (timeLeft > 0) {
+        timeLeft--;
+        document.getElementById('timer').innerText = timeLeft < 10 ? '0' + timeLeft : timeLeft;
+
+        if (timeLeft > 5) {
+          if (Math.random() > 0.3) {
+            taiAmount += Math.floor(Math.random() * 500000) + 100000;
+            taiPlayers += Math.random() > 0.6 ? 1 : 0;
+            document.getElementById('tai-amount').innerText = formatMoney(taiAmount);
+            document.getElementById('tai-players').innerText = taiPlayers;
+          }
+          if (Math.random() > 0.3) {
+            xiuAmount += Math.floor(Math.random() * 500000) + 100000;
+            xiuPlayers += Math.random() > 0.6 ? 1 : 0;
+            document.getElementById('xiu-amount').innerText = formatMoney(xiuAmount);
+            document.getElementById('xiu-players').innerText = xiuPlayers;
+          }
+        }
+      } else {
+        startRollingSequence();
+      }
+    }, 1000);
+
+    function startRollingSequence() {
+      isRolling = true;
+      document.getElementById('timer').style.display = 'none';
+      document.getElementById('plate-lid').classList.remove('opened');
+      document.getElementById('dice-container').style.display = 'flex';
+      document.getElementById('center-plate').classList.add('shaking');
+
+      const d1 = document.getElementById('dice1');
+      const d2 = document.getElementById('dice2');
+      const d3 = document.getElementById('dice3');
+
+      d1.classList.add('rolling-front');
+      d2.classList.add('rolling-front');
+      d3.classList.add('rolling-front');
+
+      // Cuộn nhanh phía trước màn hình trong 2 giây
+      let soundTimer = setInterval(playDiceSound, 100);
+
+      let rollInterval = setInterval(() => {
+        d1.innerHTML = diceSVGs[Math.floor(Math.random() * 6) + 1];
+        d2.innerHTML = diceSVGs[Math.floor(Math.random() * 6) + 1];
+        d3.innerHTML = diceSVGs[Math.floor(Math.random() * 6) + 1];
+      }, 60);
+
+      setTimeout(() => {
+        clearInterval(rollInterval);
+        clearInterval(soundTimer);
+        
+        document.getElementById('center-plate').classList.remove('shaking');
+        d1.classList.remove('rolling-front');
+        d2.classList.remove('rolling-front');
+        d3.classList.remove('rolling-front');
+
+        let v1 = Math.floor(Math.random() * 6) + 1;
+        let v2 = Math.floor(Math.random() * 6) + 1;
+        let v3 = Math.floor(Math.random() * 6) + 1;
+        let total = v1 + v2 + v3;
+        let result = total >= 11 ? 'TÀI' : 'XỈU';
+
+        d1.innerHTML = diceSVGs[v1];
+        d2.innerHTML = diceSVGs[v2];
+        d3.innerHTML = diceSVGs[v3];
+
+        // Đóng nắp bát tự động che kết quả
+        document.getElementById('plate-lid').style.display = 'flex';
+
+        // Xử lý thắng thua thực tế
+        let winAmount = 0;
+        let betOnThis = myBets[result];
+        if (betOnThis > 0) {
+          winAmount = betOnThis * 1.98;
+          userBalance += winAmount;
+          updateBalanceUI();
+          showToast(`🎉 CHÚC MỪNG! Thắng +${formatMoney(winAmount)} VNĐ (${result} ${total}d)`);
+        } else if (myBets['TÀI'] > 0 || myBets['XỈU'] > 0) {
+          showToast(`❌ Kết quả: ${result} (${total} điểm). Chúc bạn may mắn lần sau!`);
+        }
+
+        // Lưu Lịch Sử Đặt Cược Thực Tế
+        if (myBets['TÀI'] > 0 || myBets['XỈU'] > 0) {
+          myHistoryLogs.unshift({
+            id: currentSessionId,
+            side: myBets['TÀI'] > 0 ? 'TÀI' : 'XỈU',
+            bet: myBets['TÀI'] > 0 ? myBets['TÀI'] : myBets['XỈU'],
+            res: `${result} (${total}d)`,
+            win: winAmount > 0 ? `+${formatMoney(winAmount)}` : '0'
+          });
+        }
+
+        currentSessionId++;
+        setTimeout(resetNewSession, 5000);
+
+      }, 2000); // ĐÚNG 2 GIÂY
+    }
+
+    function resetNewSession() {
+      document.getElementById('side-tai').classList.remove('active-win');
+      document.getElementById('side-xiu').classList.remove('active-win');
+      document.getElementById('dice-container').style.display = 'none';
+      document.getElementById('timer').style.display = 'block';
+      document.getElementById('plate-lid').classList.remove('opened');
+
+      timeLeft = 45;
+      isRolling = false;
+      myBets = { TÀI: 0, XỈU: 0 };
+
+      document.getElementById('my-tai-bet').style.display = 'none';
+      document.getElementById('my-xiu-bet').style.display = 'none';
+
+      taiAmount = 150000000;
+      xiuAmount = 140000000;
+      taiPlayers = 150;
+      xiuPlayers = 130;
+
+      document.getElementById('tai-amount').innerText = formatMoney(taiAmount);
+      document.getElementById('xiu-amount').innerText = formatMoney(xiuAmount);
+      document.getElementById('tai-players').innerText = taiPlayers;
+      document.getElementById('xiu-players').innerText = xiuPlayers;
+    }
+
+    function openPlateLid() {
+      document.getElementById('plate-lid').classList.add('opened');
+    }
+
+    /* 4. CHỨC NĂNG CƯỢC BO TRÒN HUYỆN THOẠI */
+    function openBetModal(side) {
+      if (isRolling) { showToast('Đang xóc đĩa, vui lòng chờ phiên sau!'); return; }
+      selectedBetType = side;
+      document.getElementById('bet-modal-title').innerText = `CƯỢC ${side}`;
+      document.getElementById('bet-modal').style.display = 'flex';
+    }
+
+    function addBetVal(val) {
+      selectedBetAmount += val;
+      document.getElementById('bet-input').value = formatMoney(selectedBetAmount);
+    }
+
+    function setAllIn() {
+      selectedBetAmount = userBalance;
+      document.getElementById('bet-input').value = formatMoney(selectedBetAmount);
+    }
+
+    function confirmBet() {
+      if (selectedBetAmount > userBalance) { showToast('Số dư không đủ!'); return; }
+      if (selectedBetAmount <= 0) return;
+
+      userBalance -= selectedBetAmount;
+      myBets[selectedBetType] += selectedBetAmount;
+      updateBalanceUI();
+
+      if (selectedBetType === 'TÀI') {
+        document.getElementById('my-tai-bet').innerText = `Đã cược: ${formatMoney(myBets['TÀI'])}`;
+        document.getElementById('my-tai-bet').style.display = 'block';
+      } else {
+        document.getElementById('my-xiu-bet').innerText = `Đã cược: ${formatMoney(myBets['XỈU'])}`;
+        document.getElementById('my-xiu-bet').style.display = 'block';
+      }
+
+      showToast(`Cược thành công ${formatMoney(selectedBetAmount)} VNĐ vào ${selectedBetType}`);
+      closeModal('bet-modal');
+      selectedBetAmount = 50000;
+      document.getElementById('bet-input').value = '50,000';
+    }
+
+    /* 5. USER MODAL, CHỌN AVATAR HOT GIRL / SÁT THỦ */
+    function openUserModal() { document.getElementById('user-modal').style.display = 'flex'; }
+
+    function selectAvatar(el, url) {
+      document.querySelectorAll('.avatar-item').forEach(item => item.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedAvatarUrl = url;
+    }
+
+    function saveUserProfile() {
+      const newName = document.getElementById('user-name-input').value;
+      document.getElementById('user-name-display').innerText = newName;
+      document.getElementById('main-avatar').style.backgroundImage = `url('${selectedAvatarUrl}')`;
+      showToast('🎉 Cập nhật thông tin tài khoản thành công!');
+      closeModal('user-modal');
+    }
+
+    /* 6. CHỨC NĂNG NẠP & RÚT TIỀN THỰC TẾ */
+    function openNapModal() { document.getElementById('nap-modal').style.display = 'flex'; }
+    function openRutModal() { 
+      document.getElementById('rut-balance-display').innerText = formatMoney(userBalance);
+      document.getElementById('rut-modal').style.display = 'flex'; 
+    }
+
+    function switchPayTab(el, type) {
+      document.querySelectorAll('.pay-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('pay-qr-body').style.display = type === 'qr' ? 'block' : 'none';
+      document.getElementById('pay-card-body').style.display = type === 'card' ? 'block' : 'none';
+    }
+
+    function confirmNapMoney() {
+      userBalance += 2000000;
+      updateBalanceUI();
+      showToast('🎉 Nạp thành công +2,000,000 VNĐ vào tài khoản!');
+      closeModal('nap-modal');
+    }
+
+    function confirmRutMoney() {
+      const amount = parseInt(document.getElementById('rut-amount-input').value) || 0;
+      if (amount <= 0 || amount > userBalance) { showToast('Số tiền rút không hợp lệ!'); return; }
+      
+      userBalance -= amount;
+      updateBalanceUI();
+      showToast(`🚀 Lệnh rút ${formatMoney(amount)} VNĐ đã gửi thành công!`);
+      closeModal('rut-modal');
+    }
+
+    /* 7. LỊCH SỬ ĐẶT CƯỢC MODAL */
+    function openHistoryBetsModal() {
+      const tbody = document.getElementById('history-bets-list');
+      tbody.innerHTML = '';
+      if (myHistoryLogs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="padding:15px; color:#888;">Chưa có lịch sử cược</td></tr>`;
+      } else {
+        myHistoryLogs.forEach(log => {
+          tbody.innerHTML += `
+            <tr style="border-bottom:1px solid #222;">
+              <td style="padding:6px;">#${log.id}</td>
+              <td style="color:${log.side==='TÀI'?'#ffd700':'#00b4d8'}; font-weight:bold;">${log.side}</td>
+              <td>${formatMoney(log.bet)}</td>
+              <td>${log.res}</td>
+              <td style="color:${log.win!='0'?'#00e676':'#ff5252'}; font-weight:bold;">${log.win}</td>
+            </tr>
+          `;
+        });
+      }
+      document.getElementById('history-bets-modal').style.display = 'flex';
+    }
+
+    /* 8. HELPER SYSTEM FUNCTIONS */
+    function updateBalanceUI() {
+      document.getElementById('user-balance').innerText = formatMoney(userBalance);
+      document.getElementById('arena-balance').innerText = formatMoney(userBalance);
+    }
+
+    function openSettingModal() { document.getElementById('setting-modal').style.display = 'flex'; }
+    
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('sound-btn').innerText = soundEnabled ? '🔊' : '🔇';
+      document.getElementById('sound-toggle').checked = soundEnabled;
+      showToast(soundEnabled ? 'Đã bật âm thanh' : 'Đã tắt âm thanh');
+    }
+
+    function toggleCamera3D() {
+      isCamera3D = !isCamera3D;
+      const stage = document.getElementById('arena-stage');
+      if (isCamera3D) {
+        stage.classList.add('pan-angle');
+        showToast('Bật chế độ Soi Góc Nhìn 3D (Camera Panning)');
+      } else {
+        stage.classList.remove('pan-angle');
+        showToast('Về góc nhìn tiêu chuẩn');
+      }
+    }
+
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+  </script>
+</body>
+</html>

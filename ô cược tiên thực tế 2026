@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giao Diện Tài Xỉu - Logic ALIN Bet</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #0b0c10;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Container game */
+        .game-container {
+            position: relative;
+            width: 440px;
+            height: 650px;
+            background: radial-gradient(circle, #1a1c29 0%, #08090d 100%);
+            border-radius: 24px;
+            border: 2px solid #2a2e45;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* Khung hiển thị số dư */
+        .balance-box {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 1px solid #ffca28;
+            color: #ffca28;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 25px;
+            box-shadow: 0 0 12px rgba(255, 202, 40, 0.25);
+            letter-spacing: 0.5px;
+        }
+
+        /* Bảng Tài Xỉu Minh Họa */
+        .taixiu-board {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .side-btn {
+            width: 140px;
+            height: 90px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .side-tai {
+            background: linear-gradient(145deg, #e53935, #b71c1c);
+            border: 2px solid #ff5252;
+            color: #fff;
+        }
+
+        .side-xiu {
+            background: linear-gradient(145deg, #1e88e5, #0d47a1);
+            border: 2px solid #448aff;
+            color: #fff;
+        }
+
+        .side-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.15);
+        }
+
+        .side-btn .label { font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.6); }
+        .side-btn .rate { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+
+        /* Khu vực Logo Đặt Cược Thực Tế + ALIN */
+        .logo-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 15px;
+            margin-bottom: 20px;
+        }
+
+        .logic-logo {
+            width: 135px;
+            height: 135px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ff5252, #c62828);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(255, 82, 82, 0.6), inset 0 0 15px rgba(255, 255, 255, 0.3);
+            border: 3px solid #ff8a80;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.27), box-shadow 0.3s;
+            z-index: 10;
+            text-align: center;
+            padding: 8px;
+        }
+
+        .logic-logo:hover {
+            transform: scale(1.06);
+            box-shadow: 0 0 35px rgba(255, 82, 82, 0.9);
+        }
+
+        .logic-logo:active {
+            transform: scale(0.95);
+        }
+
+        .logic-logo .title {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #fff;
+            line-height: 1.2;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+        }
+
+        .logic-logo .selected-val {
+            font-size: 17px;
+            font-weight: 900;
+            color: #ffe082;
+            margin-top: 6px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+        }
+
+        /* Logo ALIN bên cạnh */
+        .alin-badge {
+            background: linear-gradient(135deg, #00e676, #00b0ff);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-weight: 900;
+            font-size: 13px;
+            color: #000;
+            letter-spacing: 1px;
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.5);
+            border: 1px solid #b9f6ca;
+            animation: pulse-alin 2s infinite alternate;
+        }
+
+        @keyframes pulse-alin {
+            0% { box-shadow: 0 0 10px rgba(0, 230, 118, 0.4); transform: scale(1); }
+            100% { box-shadow: 0 0 20px rgba(0, 230, 118, 0.8); transform: scale(1.05); }
+        }
+
+        /* BẢNG NÚT CƯỢC HÀNG NGANG BÊN DƯỚI CÙNG (1K -> 50M) VUÔNG GÓC 2 BÊN */
+        .bottom-chips-panel {
+            position: absolute;
+            bottom: -100px; /* Ban đầu ẩn bên dưới */
+            left: 5%;
+            width: 90%;
+            background: rgba(18, 22, 36, 0.95);
+            border: 2px solid #00e676;
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: 0 -5px 25px rgba(0, 230, 118, 0.3);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.27);
+            z-index: 20;
+            backdrop-filter: blur(8px);
+        }
+
+        .bottom-chips-panel.active {
+            bottom: 75px; /* Trượt xuất hiện lên ngay phía trên thanh nút thao tác */
+            opacity: 1;
+        }
+
+        .chip-square {
+            width: 52px;
+            height: 44px;
+            background: linear-gradient(145deg, #2a2e45, #1c1f30);
+            border: 2px solid #00e676;
+            border-radius: 8px; /* Vuông góc hơi bo nhẹ chuẩn UI thực tế */
+            color: #fff;
+            font-size: 13px;
+            font-weight: 800;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+
+        .chip-square:hover {
+            border-color: #ffeb3b;
+            background: #333854;
+            transform: translateY(-3px) scale(1.08);
+            color: #ffeb3b;
+            box-shadow: 0 6px 12px rgba(255, 235, 59, 0.3);
+        }
+
+        .chip-square:active {
+            transform: translateY(0) scale(0.95);
+        }
+
+        /* Bảng điều khiển nút bấm dưới cùng màn hình */
+        .actions-bar {
+            position: absolute;
+            bottom: 20px;
+            width: 90%;
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 0;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .btn-cancel {
+            background: #37474f;
+            color: #eceff1;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+
+        .btn-cancel:hover { background: #455a64; }
+
+        .btn-bet {
+            background: linear-gradient(135deg, #00c853, #b2ff59);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(0, 200, 83, 0.4);
+        }
+
+        .btn-bet:active {
+            transform: scale(0.95);
+        }
+
+        /* Thông báo Toast */
+        .toast {
+            position: absolute;
+            top: 20px;
+            background: rgba(255, 23, 68, 0.95);
+            color: #fff;
+            padding: 10px 22px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 100;
+            border: 1px solid #ff8a80;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Thông báo lỗi/thành công -->
+        <div id="toast" class="toast">Số dư không đủ!</div>
+
+        <!-- Số dư thực tế -->
+        <div class="balance-box">
+            Số dư: <span id="balance">50,000,000</span> đ
+        </div>
+
+        <!-- Bảng Tài Xỉu -->
+        <div class="taixiu-board">
+            <div class="side-btn side-tai">
+                <span class="label">TÀI</span>
+                <span class="rate">1:1.98</span>
+            </div>
+            <div class="side-btn side-xiu">
+                <span class="label">XỈU</span>
+                <span class="rate">1:1.98</span>
+            </div>
+        </div>
+
+        <!-- Khu vực Logo Đặt Cược Thực Tế & LOGIC ALIN -->
+        <div class="logo-wrapper">
+            <div class="logic-logo" id="logicLogo" onclick="toggleLogicMenu()">
+                <span class="title">Đặt Cược<br>Thực Tế</span>
+                <span class="selected-val" id="displayBet">0đ</span>
+            </div>
+            
+            <div class="alin-badge">
+                LOGIC ALIN
+            </div>
+        </div>
+
+        <!-- Các Nút Mệnh Giá Cược Nằm Ngang Vuông Góc Bên Dưới Cùng Màn Hình -->
+        <div class="bottom-chips-panel" id="bottomChipsPanel">
+            <div class="chip-square" onclick="addBet(1000)">1K</div>
+            <div class="chip-square" onclick="addBet(50000)">50K</div>
+            <div class="chip-square" onclick="addBet(500000)">500K</div>
+            <div class="chip-square" onclick="addBet(2000000)">2M</div>
+            <div class="chip-square" onclick="addBet(10000000)">10M</div>
+            <div class="chip-square" onclick="addBet(50000000)">50M</div>
+        </div>
+
+        <!-- Các Nút Thao Tác Bên Dưới Cùng -->
+        <div class="actions-bar">
+            <button class="btn btn-cancel" onclick="resetBet()">HỦY</button>
+            <button class="btn btn-bet" onclick="placeBet()">CƯỢC</button>
+        </div>
+    </div>
+
+    <script>
+        let currentBalance = 50000000;
+        let currentBet = 0;
+        let isMenuOpen = false;
+
+        // Định dạng tiền tệ
+        function formatMoney(amount) {
+            if (amount >= 1000000) {
+                return (amount / 1000000) + 'M';
+            } else if (amount >= 1000) {
+                return (amount / 1000) + 'K';
+            }
+            return amount.toLocaleString('vi-VN') + 'đ';
+        }
+
+        // Bật/tắt thanh chip cược vuông góc bên dưới khi ấn vào Logo
+        function toggleLogicMenu() {
+            const panel = document.getElementById('bottomChipsPanel');
+            const logo = document.getElementById('logicLogo');
+            
+            isMenuOpen = !isMenuOpen;
+            if (isMenuOpen) {
+                panel.classList.add('active');
+                logo.style.transform = 'scale(1.08)';
+            } else {
+                panel.classList.remove('active');
+                logo.style.transform = 'scale(1)';
+            }
+        }
+
+        // Cộng tiền cược khi chọn chip (Cho phép nhấp liên tục tự do)
+        function addBet(amount) {
+            if (currentBet + amount > currentBalance) {
+                showToast("Số dư không đủ để cược thêm!");
+                return;
+            }
+            currentBet += amount;
+            updateDisplay();
+
+            // Hiệu ứng nhấp nháy/nảy nhẹ ở Logo thực tế
+            const logo = document.getElementById('logicLogo');
+            logo.style.transform = 'scale(1.15)';
+            setTimeout(() => {
+                logo.style.transform = isMenuOpen ? 'scale(1.08)' : 'scale(1)';
+            }, 80);
+        }
+
+        // Cập nhật giao diện tiền cược bên trong Logo Đặt cược thực tế
+        function updateDisplay() {
+            document.getElementById('displayBet').innerText = currentBet === 0 ? '0đ' : formatMoney(currentBet);
+        }
+
+        // Nút Hủy - Thu gọn menu chip và đặt Logo về vị trí ban đầu
+        function resetBet() {
+            currentBet = 0;
+            updateDisplay();
+            isMenuOpen = false;
+            document.getElementById('bottomChipsPanel').classList.remove('active');
+            document.getElementById('logicLogo').style.transform = 'scale(1)';
+        }
+
+        // Nút Cược
+        function placeBet() {
+            if (currentBet === 0) {
+                showToast("Vui lòng chọn số tiền cược!");
+                return;
+            }
+
+            if (currentBet > currentBalance) {
+                showToast("Số dư không đủ!");
+                return;
+            }
+
+            // Trừ tiền thực tế
+            currentBalance -= currentBet;
+            document.getElementById('balance').innerText = currentBalance.toLocaleString('vi-VN');
+            showToast(`Cược thành công: ${formatMoney(currentBet)}!`);
+
+            // Đặt lại tiền cược và thu gọn thanh chip
+            resetBet();
+        }
+
+        // Hiển thị thông báo Toast trong vài giây thực tế
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>

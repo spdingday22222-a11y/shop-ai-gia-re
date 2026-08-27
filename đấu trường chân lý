@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đại Chiến Tảng Đá & Sniper - Auto Chess 3D Ultimate</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            color: #fff;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        /* --- HEADER & HUD --- */
+        .header-hud {
+            position: absolute;
+            top: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 92%;
+            max-width: 950px;
+            z-index: 10;
+        }
+
+        .player-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            border-radius: 16px;
+            border: 2px solid;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+        }
+
+        .player-card.ally { border-color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
+        .player-card.enemy { border-color: #ef4444; box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
+
+        .hp-badge {
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(30, 41, 59, 0.7);
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #06b6d4, #a855f7, #f59e0b, #f97316);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            animation: rotateLogo 8s infinite linear;
+        }
+
+        @keyframes rotateLogo { 100% { transform: rotate(360deg); } }
+
+        /* --- BÀN CỜ 3D --- */
+        .board-viewport {
+            perspective: 1100px;
+            margin-top: 20px;
+        }
+
+        .board {
+            width: 620px;
+            height: 620px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 6px;
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 3px solid #3b82f6;
+            border-radius: 24px;
+            transform: rotateX(38deg);
+            transform-style: preserve-3d;
+            box-shadow: 0 35px 70px rgba(0,0,0,0.95), inset 0 0 30px rgba(59, 130, 246, 0.25);
+            position: relative;
+        }
+
+        .cell {
+            background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .cell:hover {
+            background: radial-gradient(circle, #334155 0%, #1e293b 100%);
+        }
+
+        .cell.enemy-territory {
+            background: radial-gradient(circle, #311215 0%, #170709 100%);
+            border-color: rgba(239, 68, 68, 0.15);
+        }
+
+        /* --- NHÂN VẬT & HIỆU ỨNG VÒNG TRÒN VỀT ẢO --- */
+        .character {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: left 0.35s ease-out, top 0.35s ease-out;
+            transform-style: preserve-3d;
+            z-index: 5;
+            cursor: pointer;
+        }
+
+        /* Vòng hào quang 2 tia lửa vệt ảo chuyển động không gian */
+        .aura-ring {
+            position: absolute;
+            width: 95px;
+            height: 95px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            border-top-color: #a855f7;
+            border-bottom-color: #f59e0b;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.5);
+            animation: spinRing 1.8s linear infinite;
+            pointer-events: none;
+        }
+
+        .aura-ring::before {
+            content: '';
+            position: absolute;
+            inset: -5px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            border-left-color: #06b6d4;
+            border-right-color: #f97316;
+            animation: spinRingOpposite 1.1s linear infinite;
+        }
+
+        @keyframes spinRing { 100% { transform: rotate(360deg); } }
+        @keyframes spinRingOpposite { 100% { transform: rotate(-360deg); } }
+
+        /* Sniper Body: Xanh - Tím - Vàng - Cam */
+        .sniper-body {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #06b6d4 0%, #a855f7 35%, #f59e0b 70%, #f97316 100%);
+            clip-path: polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%);
+            box-shadow: 0 0 20px #f59e0b;
+            position: relative;
+            animation: floatBody 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes floatBody {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-4px); }
+        }
+
+        /* Tảng Đá Phe Ta & Tảng Đá Đỏ Phe Địch */
+        .rock-body-ally {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #475569, #334155);
+            clip-path: polygon(20% 0%, 80% 10%, 100% 40%, 85% 90%, 40% 100%, 0% 70%, 10% 30%);
+            border: 2px solid #10b981;
+            box-shadow: inset 0 0 12px #10b981, 0 0 12px #10b981;
+        }
+
+        .rock-body-enemy {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #7f1d1d, #450a0a);
+            clip-path: polygon(30% 0%, 90% 15%, 100% 50%, 70% 100%, 20% 90%, 0% 40%);
+            border: 2px solid #ef4444;
+            box-shadow: inset 0 0 12px #ef4444, 0 0 15px #ef4444;
+        }
+
+        .star-rank {
+            position: absolute;
+            top: -24px;
+            font-size: 14px;
+            color: #fbbf24;
+            text-shadow: 0 0 8px #000;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+
+        /* THANH HP HOÀN THIỆN LỚN + THANH NHỎ CHIÊU BÊN DƯỚI */
+        .hud-bars {
+            position: absolute;
+            top: -16px;
+            width: 60px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .bar-bg {
+            width: 100%;
+            height: 5px;
+            background: rgba(0,0,0,0.85);
+            border-radius: 3px;
+            overflow: hidden;
+            border: 0.5px solid rgba(255,255,255,0.1);
+        }
+
+        .hp-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #4ade80); width: 100%; transition: width 0.2s; }
+        .sub-mana-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #06b6d4); width: 0%; transition: width 0.1s; }
+
+        /* CỤM HUYẾT CẦU (CỤC MÁU TĂNG TANK) */
+        .blood-orb {
+            position: absolute;
+            bottom: -10px;
+            width: 14px;
+            height: 14px;
+            background: radial-gradient(circle, #ff0055, #880022);
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ff0055;
+            animation: pulseOrb 0.8s infinite alternate;
+        }
+
+        @keyframes pulseOrb { 100% { transform: scale(1.35); } }
+
+        /* VỆT ĐẠN BẮN TỈA VÀNG CAM VỆT ĐUÔI ẢO DÀI */
+        .bullet-trail {
+            position: absolute;
+            height: 6px;
+            background: linear-gradient(90deg, #f59e0b, #ef4444, transparent);
+            box-shadow: 0 0 15px #f59e0b;
+            border-radius: 3px;
+            z-index: 100;
+            pointer-events: none;
+            transform-origin: left center;
+        }
+
+        /* TÊN LỬA VÀNG CAM CÓ VỆT ĐUÔI ẢO DÀI ĐẸP MẮT */
+        .rocket-projectile {
+            position: absolute;
+            width: 24px;
+            height: 8px;
+            background: linear-gradient(90deg, #ffffff, #f59e0b, #ef4444);
+            border-radius: 4px;
+            box-shadow: 0 0 20px #f59e0b, -10px 0 15px #ef4444;
+            z-index: 101;
+            pointer-events: none;
+            transition: all 0.25s linear;
+        }
+
+        /* MODAL KẾT QUẢ THẮNG THUA */
+        .game-over-modal {
+            position: absolute;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.92);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            backdrop-filter: blur(8px);
+        }
+
+        .game-over-modal h1 {
+            font-size: 52px;
+            margin-bottom: 25px;
+            text-shadow: 0 0 25px currentColor;
+            letter-spacing: 2px;
+        }
+
+        /* CONTROLS BAR */
+        .controls {
+            margin-top: 25px;
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: #38bdf8;
+            border: 1px solid #38bdf8;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.25s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+
+        button:hover {
+            background: #38bdf8;
+            color: #020617;
+            box-shadow: 0 0 20px #38bdf8;
+            transform: translateY(-2px);
+        }
+
+        /* TRẠNG THÁI CHOÁNG */
+        .stunned-effect {
+            position: absolute;
+            top: -35px;
+            font-size: 16px;
+            animation: spinStun 1s linear infinite;
+        }
+
+        @keyframes spinStun { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <!-- HUD THÔNG TIN MÁU 2 PHE -->
+    <div class="header-hud">
+        <div class="player-card ally">
+            <span>🛡️ PHE TA:</span>
+            <span class="hp-badge" id="allyHpText" style="color: #10b981;">100 HP</span>
+        </div>
+        <div class="logo-container">
+            <div class="logo-icon"></div>
+            <span style="font-weight: 900; letter-spacing: 2px; color: #f8fafc;">SNIPER ROCK WARRIORS</span>
+        </div>
+        <div class="player-card enemy">
+            <span>👑 PHE ĐỊCH:</span>
+            <span class="hp-badge" id="enemyHpText" style="color: #ef4444;">100 HP</span>
+        </div>
+    </div>
+
+    <!-- BÀN CỜ THỰC TẾ 3D -->
+    <div class="board-viewport">
+        <div class="board" id="board">
+            <!-- Render ô cờ từ Javascript -->
+        </div>
+    </div>
+
+    <!-- NÚT ĐIỀU KHIỂN GAME -->
+    <div class="controls">
+        <button onclick="buyUnit('sniper')">🎯 Mua Sniper (Xanh-Tím-Cam)</button>
+        <button onclick="buyUnit('rock')">🪨 Mua Tank Tảng Đá</button>
+        <button onclick="startRound()" id="startBtn">⚔️ Bắt Đầu Vòng Trận Đấu</button>
+    </div>
+
+    <!-- MODAL KẾT THÚC CẬP NHẬT -->
+    <div class="game-over-modal" id="gameOverModal">
+        <h1 id="gameOverResult">KẾT QUẢ</h1>
+        <button onclick="location.reload()">🔄 Chơi Lại Từ Đầu</button>
+    </div>
+
+    <script>
+        const boardEl = document.getElementById('board');
+        let allyPlayerHp = 100;
+        let enemyPlayerHp = 100;
+        let inBattle = false;
+        let selectedUnit = null;
+
+        let units = []; // Quản lý toàn bộ nhân vật trên bàn cờ
+
+        // Khởi tạo bàn cờ 6x6
+        function initBoard() {
+            boardEl.innerHTML = '';
+            for (let r = 0; r < 6; r++) {
+                for (let c = 0; c < 6; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell' + (r < 3 ? ' enemy-territory' : '');
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    
+                    // Click chuột trái di chuyển nhân vật đến chỗ tự do thực tế
+                    cell.addEventListener('click', () => handleCellClick(r, c));
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        // Tạo nhân vật mặc định ban đầu
+        function createInitialUnits() {
+            spawnUnit('sniper', 'ally', 4, 2);
+            spawnUnit('rock', 'ally', 5, 1);
+            
+            // AI Địch tự động tính toán xếp tướng cân bằng
+            enemyAISpawn();
+        }
+
+        function enemyAISpawn() {
+            // Địch là Tảng Đá Đỏ và Sniper
+            spawnUnit('rock', 'enemy', 0, 1);
+            spawnUnit('rock', 'enemy', 0, 4);
+            spawnUnit('sniper', 'enemy', 1, 3);
+        }
+
+        function spawnUnit(type, team, row, col) {
+            const unit = {
+                id: Math.random().toString(36).substr(2, 9),
+                type: type, // 'sniper' hoặc 'rock'
+                team: team, // 'ally' hoặc 'enemy'
+                row: row,
+                col: col,
+                hp: type === 'rock' ? 300 : 140,
+                maxHp: type === 'rock' ? 300 : 140,
+                subHpMana: 0, // Thanh HP/Mana bé bên dưới
+                stars: 1,
+                hasBloodOrb: false,
+                isStunned: false,
+                el: document.createElement('div')
+            };
+
+            renderUnitVisual(unit);
+            units.push(unit);
+            checkMergeStars(team, type);
+            updateUnitPosition(unit);
+        }
+
+        function renderUnitVisual(unit) {
+            unit.el.className = 'character';
+            
+            let html = `<div class="star-rank">${'★'.repeat(unit.stars)}</div>`;
+            html += `<div class="hud-bars">
+                        <div class="bar-bg"><div class="hp-fill"></div></div>
+                        <div class="bar-bg"><div class="sub-mana-fill"></div></div>
+                    </div>`;
+
+            if (unit.type === 'sniper') {
+                html += `<div class="aura-ring"></div><div class="sniper-body"></div>`;
+            } else {
+                html += `<div class="${unit.team === 'ally' ? 'rock-body-ally' : 'rock-body-enemy'}"></div>`;
+            }
+
+            if (unit.hasBloodOrb) {
+                html += `<div class="blood-orb"></div>`;
+            }
+
+            unit.el.innerHTML = html;
+            
+            // Nhấp chuột chọn nhân vật bên mình
+            unit.el.addEventListener('click', (e) => {
+                if (inBattle) return;
+                e.stopPropagation();
+                if (unit.team === 'ally') {
+                    selectedUnit = unit;
+                    highlightUnitSelection(unit);
+                }
+            });
+
+            boardEl.appendChild(unit.el);
+        }
+
+        function updateUnitPosition(unit) {
+            const cellWidth = 620 / 6;
+            const cellHeight = 620 / 6;
+            unit.el.style.left = (unit.col * cellWidth + 11) + 'px';
+            unit.el.style.top = (unit.row * cellHeight + 11) + 'px';
+        }
+
+        function highlightUnitSelection(unit) {
+            units.forEach(u => u.el.style.filter = 'none');
+            if (unit) unit.el.style.filter = 'drop-shadow(0 0 12px #38bdf8)';
+        }
+
+        // Di chuyển chuột trái tự do thực tế
+        function handleCellClick(row, col) {
+            if (inBattle || !selectedUnit) return;
+            const occupied = units.find(u => u.row === row && u.col === col);
+            if (!occupied) {
+                selectedUnit.row = row;
+                selectedUnit.col = col;
+                updateUnitPosition(selectedUnit);
+                selectedUnit = null;
+                highlightUnitSelection(null);
+            }
+        }
+
+        // Ghép 3 tướng lên 2 sao / 3 sao cân bằng
+        function checkMergeStars(team, type) {
+            [1, 2].forEach(star => {
+                const matches = units.filter(u => u.team === team && u.type === type && u.stars === star);
+                if (matches.length >= 3) {
+                    for (let i = 0; i < 2; i++) {
+                        const removeU = matches[i];
+                        removeU.el.remove();
+                        units = units.filter(u => u.id !== removeU.id);
+                    }
+                    const survivor = matches[2];
+                    survivor.stars += 1;
+                    survivor.maxHp += 180;
+                    survivor.hp = survivor.maxHp;
+                    survivor.hasBloodOrb = true; // Tách cục máu mạnh hơn khi lên tank máu châu
+                    renderUnitVisual(survivor);
+                    updateUnitPosition(survivor);
+                }
+            });
+        }
+
+        function buyUnit(type) {
+            if (inBattle) return;
+            for (let r = 5; r >= 3; r--) {
+                for (let c = 0; c < 6; c++) {
+                    if (!units.find(u => u.row === r && u.col === c)) {
+                        spawnUnit(type, 'ally', r, c);
+                        return;
+                    }
+                }
+            }
+        }
+
+        // AUTO CHESS REALTIME GIAO TRANH VÒNG
+        function startRound() {
+            if (inBattle) return;
+            inBattle = true;
+            document.getElementById('startBtn').disabled = true;
+
+            const battleInterval = setInterval(() => {
+                const allies = units.filter(u => u.team === 'ally' && u.hp > 0);
+                const enemies = units.filter(u => u.team === 'enemy' && u.hp > 0);
+
+                if (allies.length === 0 || enemies.length === 0) {
+                    clearInterval(battleInterval);
+                    endRound(allies.length > 0 ? 'ally' : 'enemy');
+                    return;
+                }
+
+                units.forEach(u => {
+                    if (u.hp <= 0 || u.isStunned) return;
+
+                    const targets = units.filter(t => t.team !== u.team && t.hp > 0);
+                    if (targets.length === 0) return;
+
+                    let closest = targets[0];
+                    let minDist = 999;
+                    targets.forEach(t => {
+                        let dist = Math.hypot(t.row - u.row, t.col - u.col);
+                        if (dist < minDist) { minDist = dist; closest = t; }
+                    });
+
+                    // Tự tăng thanh phụ HP/Mana bé bên dưới khi giao tranh
+                    u.subHpMana = Math.min(100, u.subHpMana + 15);
+                    const subBar = u.el.querySelector('.sub-mana-fill');
+                    if (subBar) subBar.style.width = u.subHpMana + '%';
+
+                    // KIỂM TRA ĐIỀU KIỆN TUNG CHIÊU CỦA SNIPER
+                    if (u.type === 'sniper') {
+                        // Khi thanh máu bé bên dưới đầy kịch 100% -> Tung chiêu choáng + 6 tên lửa vàng cam
+                        if (u.subHpMana >= 100) {
+                            u.subHpMana = 0;
+                            fireRocketComboUltimate(u, closest);
+                        } 
+                        // Khi HP nhỏ hơn 35% -> Tung chiêu sát thương tự động khẩn cấp
+                        else if ((u.hp / u.maxHp) < 0.35 && u.subHpMana >= 40) {
+                            u.subHpMana -= 35;
+                            fireAutoSniperSkill(u, closest);
+                        }
+                        else if (minDist <= 2) {
+                            attackTarget(u, closest, 18 * u.stars);
+                        } else {
+                            moveTowards(u, closest);
+                        }
+                    } else {
+                        // Cận chiến Tảng Đá
+                        if (minDist <= 1.5) {
+                            attackTarget(u, closest, 22 * u.stars);
+                        } else {
+                            moveTowards(u, closest);
+                        }
+                    }
+                });
+
+            }, 750);
+        }
+
+        function moveTowards(unit, target) {
+            if (unit.row < target.row) unit.row++;
+            else if (unit.row > target.row) unit.row--;
+            else if (unit.col < target.col) unit.col++;
+            else if (unit.col > target.col) unit.col--;
+            updateUnitPosition(unit);
+        }
+
+        function attackTarget(attacker, target, damage) {
+            target.hp -= damage;
+            const hpFill = target.el.querySelector('.hp-fill');
+            if (hpFill) hpFill.style.width = Math.max(0, (target.hp / target.maxHp) * 100) + '%';
+
+            if (target.hp <= 0) {
+                target.el.style.opacity = '0';
+                setTimeout(() => target.el.remove(), 300);
+            }
+        }
+
+        // CHIÊU BẮN TỈA TỰ ĐỘNG BÊN DƯỚI HP BÉ
+        function fireAutoSniperSkill(shooter, target) {
+            const shooterRect = shooter.el.getBoundingClientRect();
+            const targetRect = target.el.getBoundingClientRect();
+
+            const trail = document.createElement('div');
+            trail.className = 'bullet-trail';
+
+            const startX = shooterRect.left + 40;
+            const startY = shooterRect.top + 40;
+            const endX = targetRect.left + 40;
+            const endY = targetRect.top + 40;
+
+            const distance = Math.hypot(endX - startX, endY - startY);
+            const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+
+            trail.style.width = distance + 'px';
+            trail.style.left = startX + 'px';
+            trail.style.top = startY + 'px';
+            trail.style.transform = `rotate(${angle}deg)`;
+
+            document.body.appendChild(trail);
+
+            setTimeout(() => {
+                trail.remove();
+                attackTarget(shooter, target, 55 * shooter.stars);
+            }, 250);
+        }
+
+        // CHIÊU TỐI THƯỢNG: KHI MÁU/MANA BÉ ĐẦY -> CHIÊU BẮN TỈA TỰ ĐỘNG -> CHOÁNG VÀI GIÂY -> BẮN 6 PHÁT TÊN LỬA VÀNG CAM VỆT ĐUÔI DÀI
+        function fireRocketComboUltimate(shooter, target) {
+            // Step 1: Bắn quả định vị sát thương & Choáng
+            fireAutoSniperSkill(shooter, target);
+
+            target.isStunned = true;
+            const stunIndicator = document.createElement('div');
+            stunIndicator.className = 'stunned-effect';
+            stunIndicator.innerText = '💫 CHOÁNG';
+            target.el.appendChild(stunIndicator);
+
+            setTimeout(() => {
+                target.isStunned = false;
+                stunIndicator.remove();
+            }, 2500); // Choáng 2.5 giây
+
+            // Step 2: Bắn 6 phát liên tiếp Tên Lửa Vàng Cam Có Vệt Đuôi Ảo
+            for (let i = 0; i < 6; i++) {
+                setTimeout(() => {
+                    if (target.hp > 0) {
+                        launchRocketProjectile(shooter, target);
+                    }
+                }, 300 + i * 220);
+            }
+        }
+
+        function launchRocketProjectile(shooter, target) {
+            const shooterRect = shooter.el.getBoundingClientRect();
+            const targetRect = target.el.getBoundingClientRect();
+
+            const rocket = document.createElement('div');
+            rocket.className = 'rocket-projectile';
+
+            const startX = shooterRect.left + 30;
+            const startY = shooterRect.top + 30;
+            const endX = targetRect.left + 30;
+            const endY = targetRect.top + 30;
+
+            const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+
+            rocket.style.left = startX + 'px';
+            rocket.style.top = startY + 'px';
+            rocket.style.transform = `rotate(${angle}deg)`;
+
+            document.body.appendChild(rocket);
+
+            // Chuyển động tên lửa tới mục tiêu
+            requestAnimationFrame(() => {
+                rocket.style.left = endX + 'px';
+                rocket.style.top = endY + 'px';
+            });
+
+            setTimeout(() => {
+                rocket.remove();
+                attackTarget(shooter, target, 25 * shooter.stars);
+            }, 250);
+        }
+
+        // KẾT THÚC VÒNG VÀ TRỪ HP TRƯỞNG PHE
+        function endRound(winnerTeam) {
+            inBattle = false;
+            document.getElementById('startBtn').disabled = false;
+
+            const survivingUnits = units.filter(u => u.team === winnerTeam && u.hp > 0);
+            const damageToPlayer = survivingUnits.reduce((sum, u) => sum + u.stars * 12, 8);
+
+            if (winnerTeam === 'ally') {
+                enemyPlayerHp = Math.max(0, enemyPlayerHp - damageToPlayer);
+                document.getElementById('enemyHpText').innerText = enemyPlayerHp + ' HP';
+                
+                // Các tướng thắng được tách/nhận cục máu tăng tank trâu hơn
+                survivingUnits.forEach(u => {
+                    u.hasBloodOrb = true;
+                    u.maxHp += 60;
+                    renderUnitVisual(u);
+                });
+            } else {
+                allyPlayerHp = Math.max(0, allyPlayerHp - damageToPlayer);
+                document.getElementById('allyHpText').innerText = allyPlayerHp + ' HP';
+            }
+
+            // KIỂM TRA HP VỀ 0 -> THẮNG THUA
+            if (allyPlayerHp <= 0 || enemyPlayerHp <= 0) {
+                const modal = document.getElementById('gameOverModal');
+                const resultText = document.getElementById('gameOverResult');
+                modal.style.display = 'flex';
+                if (allyPlayerHp <= 0) {
+                    resultText.innerText = '💔 BẠN ĐÃ THẤT BẠI!';
+                    resultText.style.color = '#ef4444';
+                } else {
+                    resultText.innerText = '🏆 BẠN ĐÃ CHIẾN THẮNG!';
+                    resultText.style.color = '#10b981';
+                }
+            } else {
+                // Hồi máu chuẩn bị vòng tiếp theo
+                units.forEach(u => {
+                    u.hp = u.maxHp;
+                    u.subHpMana = 0;
+                    const hpFill = u.el.querySelector('.hp-fill');
+                    if (hpFill) hpFill.style.width = '100%';
+                });
+                
+                // Địch tự động xếp thêm tướng nâng cấp vòng sau
+                enemyAISpawn();
+            }
+        }
+
+        // Chạy game
+        initBoard();
+        createInitialUnits();
+    </script>
+</body>
+</html>

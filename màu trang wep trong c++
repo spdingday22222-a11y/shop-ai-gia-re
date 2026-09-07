@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game TX</title>
+</head>
+<body>
+    <style>
+
+        body {
+            background: #f50505;
+            color: #0deb3d;
+            overflow: hidden;
+            height: auto;
+            display: inline;
+            justify-self: start;
+            align-self: start;
+        }
+    </style>
+    <h1>
+        <div style="color: #141414"><div style="background-color: #04f023">Hoàng Ngọc Hà</div>
+    </h1>
+
+</body>
+</html>

@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TFT Auto Chess 3D Ultimate - Real Battle & Skill System</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            color: #fff;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            height: 100vh;
+            padding-bottom: 10px;
+        }
+
+        /* HUD Header */
+        .header-hud {
+            position: absolute;
+            top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 95%;
+            max-width: 1200px;
+            z-index: 10;
+        }
+
+        .player-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 12px;
+            border: 2px solid;
+            font-size: 14px;
+        }
+
+        .player-card.ally { border-color: #10b981; }
+        .player-card.enemy { border-color: #ef4444; }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(30, 41, 59, 0.8);
+            padding: 6px 18px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #06b6d4, #a855f7, #f59e0b);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            animation: rotateLogo 8s infinite linear;
+        }
+
+        @keyframes rotateLogo { 100% { transform: rotate(360deg); } }
+
+        /* Bàn Cờ 3D */
+        .board-viewport {
+            perspective: 1000px;
+            margin-top: 45px;
+        }
+
+        .board-container {
+            transform: rotateX(32deg);
+            transform-style: preserve-3d;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .hex-board {
+            display: flex;
+            flex-direction: column;
+            gap: -6px;
+            background: rgba(15, 23, 42, 0.85);
+            padding: 16px;
+            border-radius: 20px;
+            border: 2px solid rgba(56, 189, 248, 0.3);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        .hex-row {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .hex-row.offset {
+            margin-left: 32px;
+        }
+
+        .hex-cell {
+            width: 58px;
+            height: 64px;
+            background: rgba(30, 41, 59, 0.7);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .hex-cell.enemy-zone {
+            background: rgba(69, 10, 10, 0.5);
+        }
+
+        .bench-container {
+            display: flex;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 8px 14px;
+            border-radius: 14px;
+            border: 2px solid #64748b;
+        }
+
+        .bench-cell {
+            width: 52px;
+            height: 52px;
+            background: rgba(30, 41, 59, 0.9);
+            border: 2px solid #475569;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Thẻ Tướng trên sàn */
+        .unit {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            background-size: cover;
+            background-position: center;
+            position: absolute;
+            z-index: 5;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            transition: transform 0.1s;
+        }
+
+        .unit.enemy-unit {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 10px #ef4444 !important;
+        }
+
+        .cost-3 { border-color: #3b82f6; box-shadow: 0 0 10px #3b82f6; }
+        .cost-4 { border-color: #a855f7; box-shadow: 0 0 12px #a855f7; }
+        .cost-5 { border-color: #f59e0b; box-shadow: 0 0 15px #f59e0b; }
+
+        .star-rank {
+            position: absolute;
+            top: -14px;
+            font-size: 11px;
+            color: #fbbf24;
+            font-weight: bold;
+            text-shadow: 0 0 4px #000;
+        }
+
+        /* Thanh Máu & Mana */
+        .bars-container {
+            position: absolute;
+            bottom: -12px;
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .unit-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .unit-hp-fill {
+            height: 100%;
+            background: #22c55e;
+            width: 100%;
+            transition: width 0.1s linear;
+        }
+
+        .enemy-hp-fill {
+            background: #ef4444;
+        }
+
+        .unit-mana-fill {
+            height: 100%;
+            background: #38bdf8;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* Chiêu thức / Effect Visuals */
+        .skill-effect {
+            position: absolute;
+            pointer-events: none;
+            z-index: 20;
+            border-radius: 50%;
+            animation: skillPop 0.5s forwards ease-out;
+        }
+
+        @keyframes skillPop {
+            0% { transform: scale(0.2); opacity: 1; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        /* Shop TFT */
+        .tft-shop-container {
+            width: 100%;
+            max-width: 980px;
+            background: rgba(10, 15, 29, 0.95);
+            border: 2px solid #38bdf8;
+            border-radius: 16px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 20;
+        }
+
+        .shop-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 150px;
+        }
+
+        .btn-shop {
+            padding: 6px 10px;
+            background: #1e293b;
+            color: #38bdf8;
+            border: 1px solid #38bdf8;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .btn-shop:hover { background: #38bdf8; color: #020617; }
+
+        .shop-cards-grid {
+            display: flex;
+            flex: 1;
+            gap: 8px;
+            height: 75px;
+        }
+
+        .shop-card {
+            flex: 1;
+            border-radius: 8px;
+            border: 2px solid;
+            position: relative;
+            cursor: pointer;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        .shop-card.cost-3 { border-color: #3b82f6; background: linear-gradient(180deg, rgba(30,58,138,0.8), rgba(59,130,246,0.3)); }
+        .shop-card.cost-4 { border-color: #a855f7; background: linear-gradient(180deg, rgba(88,28,135,0.8), rgba(168,85,247,0.3)); }
+        .shop-card.cost-5 { border-color: #f59e0b; background: linear-gradient(180deg, rgba(120,53,15,0.8), rgba(245,158,11,0.3)); }
+
+        .shop-card .hero-bg {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.45;
+            z-index: 1;
+        }
+
+        .shop-card .card-info { position: relative; z-index: 2; }
+        .shop-card .hero-name { font-size: 12px; font-weight: bold; }
+        .shop-card .hero-trait { font-size: 9px; color: #cbd5e1; }
+
+        .shop-card .hero-cost {
+            position: relative;
+            z-index: 2;
+            align-self: flex-end;
+            background: rgba(0,0,0,0.8);
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 11px;
+            color: #fbbf24;
+            font-weight: bold;
+        }
+
+        .start-btn-container {
+            position: absolute;
+            right: 30px;
+            top: 70px;
+        }
+
+        .btn-start {
+            padding: 10px 20px;
+            background: #22c55e;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
+        }
+
+        .btn-start:disabled {
+            background: #475569;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HUD Header -->
+    <div class="header-hud">
+        <div class="player-card ally">
+            <span>🛡️ PHE TA: <b id="allyHp">100 HP</b></span>
+        </div>
+        <div class="logo-container">
+            <div class="logo-icon"></div>
+            <span style="font-weight: bold; letter-spacing: 1px;">AUTO CHESS 3D - BATTLE REAL</span>
+        </div>
+        <div class="player-card enemy">
+            <span>👑 PHE ĐỊCH: <b id="enemyHp">100 HP</b></span>
+        </div>
+    </div>
+
+    <div class="start-btn-container">
+        <button class="btn-start" id="startBtn" onclick="startRound()">⚔️ Bắt Đầu Giao Tranh</button>
+    </div>
+
+    <!-- Bàn Cờ Lục Giác & Hàng Chờ -->
+    <div class="board-viewport">
+        <div class="board-container">
+            <div class="hex-board" id="hexBoard"></div>
+            <div class="bench-container" id="benchContainer"></div>
+        </div>
+    </div>
+
+    <!-- Shop TFT -->
+    <div class="tft-shop-container">
+        <div class="shop-controls">
+            <button class="btn-shop" onclick="buyXP()"><span>Mua XP (Lv.<span id="levelText">4</span>)</span><span style="color:#fbbf24">4 G</span></button>
+            <button class="btn-shop" onclick="rerollShop()"><span>Đổi Shop</span><span style="color:#fbbf24">2 G</span></button>
+        </div>
+
+        <div class="shop-cards-grid" id="shopGrid"></div>
+
+        <div style="font-weight: bold; color: #fbbf24; font-size: 18px;">
+            💰 <span id="goldText">50</span>
+        </div>
+    </div>
+
+    <script>
+        // 1. TỰ ĐỘNG LẤY TẤT CẢ TƯỚNG TỪ HÌNH ẢNH THỰC TẾ
+        const HERO_DATABASE = [
+            { 
+                id: 'yasuo', 
+                name: 'Yasuo', 
+                trait: 'Kiếm Khách / Phong Vệ', 
+                cost: 4, 
+                hp: 850, 
+                ad: 75, 
+                range: 1, 
+                skillName: 'Trăn Trối (Bão Kiếm)',
+                skillColor: '#38bdf8',
+                img: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Yasuo_0.jpg' 
+            },
+            { 
+                id: 'gwen', 
+                name: 'Gwen', 
+                trait: 'Búp Bê / Sát Thủ', 
+                cost: 3, 
+                hp: 650, 
+                ad: 60, 
+                range: 1, 
+                skillName: 'Xoẹt Xoẹt! (Cắt Băng)',
+                skillColor: '#a855f7',
+                img: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Gwen_0.jpg' 
+            },
+            { 
+                id: 'volibear', 
+                name: 'Volibear', 
+                trait: 'Gấu Băng / Đấu Sĩ', 
+                cost: 5, 
+                hp: 1200, 
+                ad: 90, 
+                range: 1, 
+                skillName: 'Sấm Sét Giáng Thế',
+                skillColor: '#f59e0b',
+                img: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Volibear_0.jpg' 
+            }
+        ];
+
+        let gold = 50;
+        let playerLevel = 4;
+        let units = [];
+        let shopCards = [];
+        let isFighting = false;
+        let battleInterval = null;
+
+        const hexBoardEl = document.getElementById('hexBoard');
+        const benchContainerEl = document.getElementById('benchContainer');
+        const shopGridEl = document.getElementById('shopGrid');
+
+        // Khởi tạo bàn cờ (4 hàng x 7 cột) và Bench (9 ô)
+        function initBoardAndBench() {
+            hexBoardEl.innerHTML = '';
+            for (let r = 0; r < 4; r++) {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'hex-row' + (r % 2 !== 0 ? ' offset' : '');
+                for (let c = 0; c < 7; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'hex-cell' + (r < 2 ? ' enemy-zone' : '');
+                    cell.dataset.type = 'board';
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    setupDropTarget(cell);
+                    rowEl.appendChild(cell);
+                }
+                hexBoardEl.appendChild(rowEl);
+            }
+
+            benchContainerEl.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'bench-cell';
+                cell.dataset.type = 'bench';
+                cell.dataset.index = i;
+                setupDropTarget(cell);
+                benchContainerEl.appendChild(cell);
+            }
+        }
+
+        // Tạo tướng lên sân
+        function spawnUnit(heroData, team, locType, rOrIdx, col = 0) {
+            const unit = {
+                id: Math.random().toString(36).substr(2, 9),
+                heroData: heroData,
+                team: team,
+                stars: 1,
+                hp: heroData.hp,
+                maxHp: heroData.hp,
+                mana: 0,
+                maxMana: 100,
+                locType: locType,
+                row: rOrIdx,
+                col: col,
+                x: 0,
+                y: 0
+            };
+
+            units.push(unit);
+            if (team === 'ally') checkMergeStars(heroData.id);
+            renderUnits();
+        }
+
+        function renderUnits() {
+            document.querySelectorAll('.unit').forEach(el => el.remove());
+
+            units.forEach(u => {
+                if (u.hp <= 0) return; // Không vẽ tướng đã tử trận
+
+                let parentCell;
+                if (u.locType === 'board') {
+                    const rows = hexBoardEl.querySelectorAll('.hex-row');
+                    parentCell = rows[u.row]?.children[u.col];
+                } else {
+                    parentCell = benchContainerEl.children[u.row];
+                }
+
+                if (parentCell) {
+                    const el = document.createElement('div');
+                    el.className = `unit cost-${u.heroData.cost} ${u.team === 'enemy' ? 'enemy-unit' : ''}`;
+                    el.style.backgroundImage = `url('${u.heroData.img}')`;
+                    el.draggable = !isFighting && u.team === 'ally';
+
+                    const hpPercent = Math.max(0, (u.hp / u.maxHp) * 100);
+                    const manaPercent = Math.min(100, (u.mana / u.maxMana) * 100);
+
+                    el.innerHTML = `
+                        <div class="star-rank">${'★'.repeat(u.stars)}</div>
+                        <div class="bars-container">
+                            <div class="unit-bar"><div class="unit-hp-fill ${u.team === 'enemy' ? 'enemy-hp-fill' : ''}" style="width: ${hpPercent}%"></div></div>
+                            <div class="unit-bar"><div class="unit-mana-fill" style="width: ${manaPercent}%"></div></div>
+                        </div>
+                    `;
+
+                    el.addEventListener('dragstart', (e) => {
+                        if (!isFighting) e.dataTransfer.setData('text/plain', u.id);
+                    });
+
+                    parentCell.appendChild(el);
+                }
+            });
+        }
+
+        // Logic Kéo Thả Tướng
+        function setupDropTarget(cell) {
+            cell.addEventListener('dragover', e => e.preventDefault());
+            cell.addEventListener('drop', e => {
+                e.preventDefault();
+                if (isFighting) return;
+
+                const unitId = e.dataTransfer.getData('text/plain');
+                const unit = units.find(u => u.id === unitId);
+                if (!unit) return;
+
+                const isBoard = cell.dataset.type === 'board';
+                if (isBoard) {
+                    const r = parseInt(cell.dataset.row);
+                    if (r < 2) return; // Không cho đặt tướng phe ta vào hàng địch khi xếp đội hình
+
+                    const currentBoardUnits = units.filter(u => u.team === 'ally' && u.locType === 'board').length;
+                    if (unit.locType !== 'board' && currentBoardUnits >= playerLevel) {
+                        alert(`Cấp độ ${playerLevel} chỉ cho phép xếp tối đa ${playerLevel} tướng!`);
+                        return;
+                    }
+                    unit.locType = 'board';
+                    unit.row = r;
+                    unit.col = parseInt(cell.dataset.col);
+                } else {
+                    unit.locType = 'bench';
+                    unit.row = parseInt(cell.dataset.index);
+                    unit.col = 0;
+                }
+                renderUnits();
+            });
+        }
+
+        // Tự động ghép 3 tướng cùng loại lên sao
+        function checkMergeStars(heroId) {
+            [1, 2].forEach(starLevel => {
+                const matches = units.filter(u => u.team === 'ally' && u.heroData.id === heroId && u.stars === starLevel);
+                if (matches.length >= 3) {
+                    for (let i = 0; i < 2; i++) {
+                        units = units.filter(u => u.id !== matches[i].id);
+                    }
+                    const survivor = matches[2];
+                    survivor.stars += 1;
+                    survivor.maxHp = Math.round(survivor.maxHp * 1.8);
+                    survivor.hp = survivor.maxHp;
+                    survivor.heroData.ad = Math.round(survivor.heroData.ad * 1.5);
+                }
+            });
+        }
+
+        // Shop System
+        function rerollShop() {
+            if (gold < 2) return;
+            gold -= 2;
+            document.getElementById('goldText').innerText = gold;
+
+            shopCards = [];
+            for (let i = 0; i < 5; i++) {
+                const randomHero = HERO_DATABASE[Math.floor(Math.random() * HERO_DATABASE.length)];
+                shopCards.push(randomHero);
+            }
+            renderShopUI();
+        }
+
+        function renderShopUI() {
+            shopGridEl.innerHTML = '';
+            shopCards.forEach((hero, idx) => {
+                if (!hero) return;
+                const card = document.createElement('div');
+                card.className = `shop-card cost-${hero.cost}`;
+                card.onclick = () => buyHero(idx);
+                card.innerHTML = `
+                    <div class="hero-bg" style="background-image: url('${hero.img}')"></div>
+                    <div class="card-info">
+                        <div class="hero-name">${hero.name}</div>
+                        <div class="hero-trait">${hero.trait}</div>
+                    </div>
+                    <div class="hero-cost">💰 ${hero.cost}</div>
+                `;
+                shopGridEl.appendChild(card);
+            });
+        }
+
+        function buyHero(index) {
+            const hero = shopCards[index];
+            if (!hero || gold < hero.cost) return;
+
+            for (let i = 0; i < 9; i++) {
+                if (!units.find(u => u.locType === 'bench' && u.row === i)) {
+                    gold -= hero.cost;
+                    document.getElementById('goldText').innerText = gold;
+                    spawnUnit(hero, 'ally', 'bench', i);
+                    shopCards[index] = null;
+                    renderShopUI();
+                    return;
+                }
+            }
+        }
+
+        function buyXP() {
+            if (gold >= 4 && playerLevel < 9) {
+                gold -= 4;
+                playerLevel++;
+                document.getElementById('goldText').innerText = gold;
+                document.getElementById('levelText').innerText = playerLevel;
+            }
+        }
+
+        // 2. VÒNG LẶP GIAO TRANH REAL-TIME & TUNG CHIÊU
+        function startRound() {
+            if (isFighting) return;
+
+            const allyBoardUnits = units.filter(u => u.team === 'ally' && u.locType === 'board');
+            if (allyBoardUnits.length === 0) {
+                alert('Hãy kéo ít nhất 1 tướng ra bàn cờ!');
+                return;
+            }
+
+            // Tự động tạo quân địch ngẫu nhiên ở hàng trên cùng
+            spawnEnemyTeam();
+
+            isFighting = true;
+            document.getElementById('startBtn').disabled = true;
+
+            // Vòng lặp giao tranh mỗi 800ms
+            battleInterval = setInterval(battleStep, 800);
+        }
+
+        function spawnEnemyTeam() {
+            // Xóa địch cũ
+            units = units.filter(u => u.team === 'ally');
+
+            // Tạo 3 tướng địch ngẫu nhiên ở hàng 0 & 1
+            for (let i = 0; i < 3; i++) {
+                const randomHero = HERO_DATABASE[Math.floor(Math.random() * HERO_DATABASE.length)];
+                spawnUnit(randomHero, 'enemy', 'board', Math.floor(i / 2), (i * 2 + 1) % 7);
+            }
+        }
+
+        function battleStep() {
+            const boardUnits = units.filter(u => u.locType === 'board' && u.hp > 0);
+            const allies = boardUnits.filter(u => u.team === 'ally');
+            const enemies = boardUnits.filter(u => u.team === 'enemy');
+
+            // Kiểm tra điều kiện kết thúc
+            if (allies.length === 0 || enemies.length === 0) {
+                endBattle(allies.length > 0 ? 'ally' : 'enemy');
+                return;
+            }
+
+            // Mỗi tướng tìm mục tiêu & tấn công / tung chiêu
+            boardUnits.forEach(attacker => {
+                if (attacker.hp <= 0) return;
+
+                const targets = boardUnits.filter(u => u.team !== attacker.team && u.hp > 0);
+                if (targets.length === 0) return;
+
+                // Tìm mục tiêu gần nhất
+                let closestTarget = targets[0];
+                let minDistance = getDistance(attacker, closestTarget);
+
+                targets.forEach(t => {
+                    const dist = getDistance(attacker, t);
+                    if (dist < minDistance) {
+                        minDistance = dist;
+                        closestTarget = t;
+                    }
+                });
+
+                // Nếu ngoài tầm đánh, di chuyển lại gần
+                if (minDistance > attacker.heroData.range) {
+                    moveTowards(attacker, closestTarget);
+                } else {
+                    // Đủ tầm đánh -> Đánh thường hoặc Tung Chiêu
+                    if (attacker.mana >= attacker.maxMana) {
+                        castSkill(attacker, closestTarget, targets);
+                    } else {
+                        // Đánh thường
+                        const damage = attacker.heroData.ad;
+                        closestTarget.hp -= damage;
+                        attacker.mana = Math.min(attacker.maxMana, attacker.mana + 20);
+                        closestTarget.mana = Math.min(closestTarget.maxMana, closestTarget.mana + 10);
+                    }
+                }
+            });
+
+            renderUnits();
+        }
+
+        // TỰ ĐỘNG TUNG CHIÊU ĐẶC BIỆT CỦA CÁC NHÂN VẬT THỰC TẾ
+        function castSkill(caster, primaryTarget, allEnemies) {
+            caster.mana = 0; // Reset mana
+            const skillColor = caster.heroData.skillColor;
+
+            // Tạo hiệu ứng nổ kĩ năng trên giao diện
+            showSkillEffect(primaryTarget, skillColor);
+
+            if (caster.heroData.id === 'yasuo') {
+                // Yasuo: Bão kiếm lướt chém gây sát thương lớn
+                primaryTarget.hp -= caster.heroData.ad * 2.5;
+            } else if (caster.heroData.id === 'gwen') {
+                // Gwen: Xoẹt xoẹt cắt băng gây sát thương lan
+                allEnemies.forEach(e => {
+                    if (getDistance(primaryTarget, e) <= 1) {
+                        e.hp -= caster.heroData.ad * 1.8;
+                    }
+                });
+            } else if (caster.heroData.id === 'volibear') {
+                // Volibear: Hóa khổng lồ giáng sấm sét gây choáng & dồn dame
+                primaryTarget.hp -= caster.heroData.ad * 3;
+                caster.hp = Math.min(caster.maxHp, caster.hp + 200); // Hồi máu
+            }
+        }
+
+        function showSkillEffect(target, color) {
+            const rows = hexBoardEl.querySelectorAll('.hex-row');
+            const targetCell = rows[target.row]?.children[target.col];
+            if (targetCell) {
+                const effect = document.createElement('div');
+                effect.className = 'skill-effect';
+                effect.style.width = '60px';
+                effect.style.height = '60px';
+                effect.style.background = color;
+                effect.style.boxShadow = `0 0 20px ${color}`;
+                targetCell.appendChild(effect);
+
+                setTimeout(() => effect.remove(), 500);
+            }
+        }
+
+        function getDistance(u1, u2) {
+            return Math.sqrt(Math.pow(u1.row - u2.row, 2) + Math.pow(u1.col - u2.col, 2));
+        }
+
+        function moveTowards(unit, target) {
+            if (unit.row < target.row) unit.row++;
+            else if (unit.row > target.row) unit.row--;
+
+            if (unit.col < target.col) unit.col++;
+            else if (unit.col > target.col) unit.col--;
+        }
+
+        function endBattle(winner) {
+            clearInterval(battleInterval);
+            isFighting = false;
+            document.getElementById('startBtn').disabled = false;
+
+            if (winner === 'ally') {
+                alert('🎉 Phe Ta Chiến Thắng!');
+            } else {
+                alert('💀 Phe Ta Thất Bại!');
+            }
+
+            // Dọn dẹp phe địch và hồi đầy máu cho phe ta
+            units = units.filter(u => u.team === 'ally');
+            units.forEach(u => {
+                u.hp = u.maxHp;
+                u.mana = 0;
+            });
+            renderUnits();
+        }
+
+        // KHỞI TẠO GAME
+        initBoardAndBench();
+        rerollShop();
+
+        // Spawn mặc định 3 nhân vật thực tế từ hình ảnh lên bàn cờ
+        spawnUnit(HERO_DATABASE[0], 'ally', 'board', 3, 1); // Yasuo
+        spawnUnit(HERO_DATABASE[1], 'ally', 'board', 3, 3); // Gwen
+        spawnUnit(HERO_DATABASE[2], 'ally', 'board', 3, 5); // Volibear
+    </script>
+</body>
+</html>

@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tài Xỉu MD5 Go88 Real</title>
+  <style>
+    /* RESET & FONTS */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #020205;
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* CONTAINER CHÍNH CỦA BÀN GAME */
+    .game-wrapper {
+      position: relative;
+      width: 820px;
+      height: 460px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* BÀN CHÍNH RED-GOLD CASINO BOARD */
+    .board-container {
+      position: relative;
+      width: 780px;
+      height: 420px;
+      background: radial-gradient(circle at center, #9e1b22 0%, #680d12 50%, #3a0004 90%, #200002 100%);
+      border: 4px solid #f2c766;
+      border-radius: 100px;
+      box-shadow: 
+        0 0 0 2px #570003,
+        0 0 25px rgba(242, 199, 102, 0.4),
+        inset 0 0 30px rgba(0, 0, 0, 0.8),
+        inset 0 0 8px rgba(255, 225, 150, 0.5);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 40px;
+    }
+
+    /* TOP LOGO TÀI XỈU MD5 & CHIM PHƯỢNG HOÀNG */
+    .top-logo-area {
+      position: absolute;
+      top: -35px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 50;
+    }
+
+    .phoenix-icon {
+      width: 90px;
+      height: 45px;
+      background: linear-gradient(180deg, #ffe899, #d49a22);
+      -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><path d="M10,40 Q30,10 50,25 Q70,10 90,40 Q50,20 10,40 Z"/></svg>') no-repeat center/contain;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+    }
+
+    .logo-text-title {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      background: linear-gradient(180deg, #ffffff 0%, #b0e5ff 50%, #1181c8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 2px 4px #000);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .logo-md5-badge {
+      background: linear-gradient(180deg, #ff5e00 0%, #990000 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 900;
+      font-size: 28px;
+    }
+
+    /* NÚT TIỆN ÍCH TRÒN TRÊN VIỀN */
+    .icon-btn {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #7e1e24 0%, #320306 100%);
+      border: 2px solid #e0b353;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      z-index: 30;
+      color: #ffe6a3;
+      font-weight: bold;
+      font-size: 18px;
+      transition: transform 0.1s;
+    }
+
+    .icon-btn:active { transform: scale(0.92); }
+
+    .btn-star { top: 20px; left: 20px; }
+    .btn-chart { bottom: 30px; left: 20px; background: radial-gradient(circle, #19589d, #09203f); border-color: #5bb3ff; }
+    .btn-sound { top: 20px; right: 80px; }
+    .btn-help { top: 20px; right: 20px; }
+    .btn-nan { bottom: 30px; right: 20px; background: radial-gradient(circle, #555, #111); border-color: #aaa; }
+
+    /* HIỂN THỊ TIỀN CƯỢC PHÍA TRÊN BÁT */
+    .top-pot-display {
+      position: absolute;
+      top: 38px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 20;
+    }
+
+    .dollar-sign {
+      color: #ffd700;
+      font-size: 22px;
+      font-weight: 900;
+      text-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+    }
+
+    .pot-amount {
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+    }
+
+    /* ĐỒNG HỒ ĐẾM NGƯỢC NHỎ PHÍA TRÊN HÌNH TRÒN */
+    .timer-sub {
+      position: absolute;
+      top: 68px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 16px;
+      font-weight: 900;
+      color: #ffffff;
+      text-shadow: 0 0 5px #ff0000;
+      z-index: 25;
+    }
+
+    /* KHU VỰC TRUNG TÂM: HÌNH TRÒN CHỨA 3 VIÊN XÚC XẮC */
+    .center-circle-plate {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -45%);
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #1a1a1a 0%, #0d0d0d 70%, #000000 100%);
+      border: 4px solid #f0c05a;
+      box-shadow: 
+        0 0 20px rgba(0, 0, 0, 0.9),
+        inset 0 0 15px rgba(0,0,0,0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+
+    /* CONTAINER CHỨA 3 VIÊN XÚC XẮC XẾP THEO HÌNH CHỮ V */
+    .dice-v-group {
+      position: relative;
+      width: 130px;
+      height: 120px;
+    }
+
+    /* CẤU TRÚC 3D DERE CHO MỖI VIÊN XÚC XẮC RED TRANSLUCENT */
+    .dice-3d {
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      transform-style: preserve-3d;
+      transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.3, 1.1);
+    }
+
+    /* Vị trí chuẩn chữ V */
+    #dice-top-left { top: 10px; left: 8px; }
+    #dice-top-right { top: 10px; right: 8px; }
+    #dice-bottom { bottom: 5px; left: 41px; }
+
+    /* MẶT XÚC XẮC MÀU ĐỎ MỜ */
+    .dice-face {
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      background: rgba(180, 10, 20, 0.88);
+      border: 1px solid rgba(255, 200, 200, 0.6);
+      border-radius: 8px;
+      box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.4), 0 0 4px rgba(0,0,0,0.6);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      padding: 4px;
+      align-items: center;
+      justify-items: center;
+      backface-visibility: hidden;
+    }
+
+    /* Tọa độ 3D mặt xúc xắc */
+    .face-1 { transform: rotateY(0deg) translateZ(24px); }
+    .face-6 { transform: rotateY(180deg) translateZ(24px); }
+    .face-2 { transform: rotateY(-90deg) translateZ(24px); }
+    .face-5 { transform: rotateY(90deg) translateZ(24px); }
+    .face-3 { transform: rotateX(90deg) translateZ(24px); }
+    .face-4 { transform: rotateX(-90deg) translateZ(24px); }
+
+    /* CHẤM TRẮNG NỔI BẬT */
+    .pip {
+      width: 8px;
+      height: 8px;
+      background: #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.6);
+    }
+
+    /* Bố cục chấm cho từng mặt */
+    .pip-center { grid-column: 2; grid-row: 2; }
+    .pip-tl { grid-column: 1; grid-row: 1; }
+    .pip-tr { grid-column: 3; grid-row: 1; }
+    .pip-ml { grid-column: 1; grid-row: 2; }
+    .pip-mr { grid-column: 3; grid-row: 2; }
+    .pip-bl { grid-column: 1; grid-row: 3; }
+    .pip-br { grid-column: 3; grid-row: 3; }
+
+    /* CỬA CƯỢC TÀI VÀ XỈU CHUẨN ĐỒ HỌA */
+    .bet-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 220px;
+      z-index: 15;
+    }
+
+    .bet-title-img {
+      font-size: 64px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      background: linear-gradient(180deg, #ffffff 0%, #d0d0d0 40%, #707070 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.9));
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
+    .bet-title-img.tai-active {
+      background: linear-gradient(180deg, #fff7c2 0%, #ffb700 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 12px #ffaa00);
+    }
+
+    .btn-cuoc {
+      margin-top: 15px;
+      width: 160px;
+      height: 42px;
+      background: linear-gradient(180deg, #f2cd6d 0%, #c28d28 50%, #7a5109 100%);
+      border: 2px solid #fff;
+      border-radius: 21px;
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: 900;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.8);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+      transition: transform 0.1s;
+    }
+
+    .btn-cuoc:active { transform: scale(0.95); }
+
+    /* BẢNG LỊCH SỬ CẦU BÊN DƯỚI */
+    .history-row {
+      position: absolute;
+      bottom: 45px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 4px 12px;
+      border-radius: 15px;
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      z-index: 20;
+    }
+
+    .bead {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.6);
+    }
+
+    .bead.black { background: radial-gradient(circle at 35% 35%, #555, #000); border: 1px solid #777; }
+    .bead.white { background: radial-gradient(circle at 35% 35%, #fff, #ccc); border: 1px solid #fff; }
+    .bead-count {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #000;
+      border: 1px solid #ffd700;
+      color: #ffd700;
+      font-size: 10px;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-left: 5px;
+    }
+
+    /* CHUỖI MD5 BOTTOM BAR */
+    .md5-bottom-bar {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #110203;
+      border: 1px solid #80181c;
+      border-radius: 12px;
+      padding: 2px 8px;
+      z-index: 20;
+    }
+
+    .md5-label {
+      background: #7a141a;
+      color: #ffd700;
+      font-size: 10px;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    .md5-hash {
+      color: #ccc;
+      font-size: 11px;
+      font-family: monospace;
+    }
+
+    .btn-copy {
+      background: linear-gradient(180deg, #f0c05a, #996e19);
+      border: 1px solid #fff;
+      border-radius: 10px;
+      color: #000;
+      font-size: 10px;
+      font-weight: 900;
+      padding: 2px 8px;
+      cursor: pointer;
+    }
+
+    /* MÃ PHIÊN BÊN DƯỚI */
+    .session-id {
+      position: absolute;
+      bottom: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #aaa;
+      font-size: 13px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-wrapper">
+    <div class="board-container">
+      
+      <!-- LOGO GO88 MD5 REAL -->
+      <div class="top-logo-area">
+        <div class="phoenix-icon"></div>
+        <div class="logo-text-title">
+          TÀI XỈU <span class="logo-md5-badge">MD5</span>
+        </div>
+      </div>
+
+      <!-- NÚT TIỆN ÍCH LÊN VIỀN BÀN GAME -->
+      <div class="icon-btn btn-star">★</div>
+      <div class="icon-btn btn-sound">🔊</div>
+      <div class="icon-btn btn-help">?</div>
+      <div class="icon-btn btn-chart">📊</div>
+      <div class="icon-btn btn-nan">✋</div>
+
+      <!-- TỔNG TIỀN HỦ / CƯỢC PHÍA TRÊN -->
+      <div class="top-pot-display">
+        <span class="dollar-sign">$</span>
+        <span class="pot-amount" id="pot-display">500.000</span>
+      </div>
+
+      <div class="timer-sub" id="timer">7</div>
+
+      <!-- CỬA CƯỢC TÀI -->
+      <div class="bet-zone">
+        <div class="bet-title-img" id="title-tai">TÀI</div>
+        <button class="btn-cuoc" onclick="placeBet('TAI')">CƯỢC</button>
+      </div>
+
+      <!-- HÌNH TRÒN TRUNG TÂM CHỨA 3 VIÊN XÚC XẮC -->
+      <div class="center-circle-plate">
+        <div class="dice-v-group">
+          
+          <!-- VIÊN 1: TOP LEFT -->
+          <div class="dice-3d" id="dice-top-left">
+            <div class="dice-face face-1"><div class="pip pip-center"></div></div>
+            <div class="dice-face face-6">
+              <div class="pip pip-tl"></div><div class="pip pip-tr"></div>
+              <div class="pip pip-ml"></div><div class="pip pip-mr"></div>
+              <div class="pip pip-bl"></div><div class="pip pip-br"></div>
+            </div>
+            <div class="dice-face face-2"><div class="pip pip-tl"></div><div class="pip pip-br"></div></div>
+            <div class="dice-face face-5">
+              <div class="pip pip-tl"></div><div class="pip pip-tr"></div>
+              <div class="pip pip-center"></div>
+              <div class="pip pip-bl"></div><div class="pip pip-br"></div>
+            </div>
+            <div class="dice-face face-3"><div class="pip pip-tl"></div><div class="pip pip-center"></div><div class="pip pip-br"></div></div>
+            <div class="dice-face face-4">
+              <div class="pip pip-tl"></div><div class="pip pip-tr"></div>
+              <div class="pip pip-bl"></div><div class="pip pip-br"></div>
+            </div>
+          </div>
+
+          <!-- VIÊN 2: TOP RIGHT -->
+          <div class="dice-3d" id="dice-top-right">
+            <div class="dice-face face-1"><div class="pip pip-center"></div></div>
+            <div class="dice-face face-6">
+              <div class="pip pip-tl"></div><div class="pip pip-tr"></div>
+              <div class="pip pip-ml"></div><div class="pip pip-mr"></div>
+              <div class="pip pip-bl"></div><div class="pip pip-br"></div>
+            </div>
+            <div class="dice-face face-2"><div class="pip pip-tl"></div><div class="pip pip-br"></div></div>
+            <div class="dice-face face-5">
+              <div class="pip pip-tl"></div><div class="pip pip-tr"></div>
+              <div class="pip pip-center"></div>
+              <div class="pip pip-bl"></div><div class="pip pip-br"></div>
+            </div>
+            <div class="dice-face face-3"><div class="pip pip-tl"></div><div class="pip pip-center"></div><div class="pip pip-br"></div></div>
+            <div class="dice-face face-4">
+              <div class="pip pip-tl"></div><div class="pip pip-tr"></div>
+              <div class="pip pip-bl"></div><div class="pip pip-br"></div>
+            </div>
+          </div>
+
+          <!-- VIÊN 3: BOTTOM CENTER -->
+          <div class="dice-3d" id="dice-bottom">
+            <div class="dice-face face-1"><div class="pip pip-center"></div></div>
+            <div class="dice-face face-6">
+              <div class="pip pip-tl"></div><div class="pip pip-tr"></div>
+              <div class="pip pip-ml"></div><div class="pip pip-mr"></div>
+              <div class="pip pip-bl"></div><div class="pip pip-br"></div>
+            </div>
+            <div class="dice-face face-2"><div class="pip pip-tl"></div><div class="pip pip-br"></div></div>
+            <div class="dice-face face-5">
+              <div class="pip pip-tl"></div><div class="pip pip-tr"></div>
+              <div class="pip pip-center"></div>
+              <div class="pip pip-bl"></div><div class="pip pip-br"></div>
+            </div>
+            <div class="dice-face face-3"><div class="pip pip-tl"></div><div class="pip pip-center"></div><div class="pip pip-br"></div></div>
+            <div class="dice-face face-4">
+              <div class="pip pip-tl"></div><div class="pip pip-tr"></div>
+              <div class="pip pip-bl"></div><div class="pip pip-br"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CỬA CƯỢC XỈU -->
+      <div class="bet-zone">
+        <div class="bet-title-img" id="title-xiu">XỈU</div>
+        <button class="btn-cuoc" onclick="placeBet('XIU')">CƯỢC</button>
+      </div>
+
+      <!-- LỊCH SỬ CẦU BẢNG TRÒN -->
+      <div class="history-row" id="history-beads">
+        <div class="bead white"></div>
+        <div class="bead white"></div>
+        <div class="bead black"></div>
+        <div class="bead black"></div>
+        <div class="bead white"></div>
+        <div class="bead white"></div>
+        <div class="bead white"></div>
+        <div class="bead black"></div>
+        <div class="bead white"></div>
+        <div class="bead-count">15</div>
+      </div>
+
+      <!-- BAR CHUỖI MD5 FOOTER -->
+      <div class="md5-bottom-bar">
+        <span class="md5-label">CHUỖI MD5</span>
+        <span class="md5-hash" id="hash-text">#20142_9bf31c7ff062936a96d3c8bd1f8f2ff3{5-6-4}</span>
+        <button class="btn-copy" onclick="copyMD5()">COPY</button>
+      </div>
+
+    </div>
+
+    <div class="session-id" id="session-id">#20142</div>
+  </div>
+
+  <script>
+    // GÓC XOAY TƯƠNG ỨNG CÁC MẶT XÚC XẮC (1 -> 6)
+    const faceRotations = {
+      1: { x: 0, y: 0 },
+      6: { x: 0, y: 180 },
+      2: { x: 0, y: 90 },
+      5: { x: 0, y: -90 },
+      3: { x: -90, y: 0 },
+      4: { x: 90, y: 0 }
+    };
+
+    let timerVal = 15;
+    let isRolling = false;
+
+    // HAM XOAY XÚC XẮC 3D VỀ ĐÚNG MẶT MỤC TIÊU
+    function setDiceResult(elementId, value) {
+      const el = document.getElementById(elementId);
+      const rot = faceRotations[value];
+      
+      // Thêm các vòng xoay 360 ngẫu nhiên để tạo hiệu ứng lắc
+      const randX = (Math.floor(Math.random() * 4) + 4) * 360;
+      const randY = (Math.floor(Math.random() * 4) + 4) * 360;
+      
+      el.style.transform = `rotateX(${rot.x + randX}deg) rotateY(${rot.y + randY}deg)`;
+    }
+
+    // THỰC HIỆN LẮC GAME MỚI
+    function rollDice() {
+      if(isRolling) return;
+      isRolling = true;
+
+      // Xóa highlight kết quả cũ
+      document.getElementById('title-tai').classList.remove('tai-active');
+      document.getElementById('title-xiu').classList.remove('tai-active');
+
+      // Random 3 mặt ngẫu nhiên (1-6)
+      const d1 = Math.floor(Math.random() * 6) + 1;
+      const d2 = Math.floor(Math.random() * 6) + 1;
+      const d3 = Math.floor(Math.random() * 6) + 1;
+
+      setDiceResult('dice-top-left', d1);
+      setDiceResult('dice-top-right', d2);
+      setDiceResult('dice-bottom', d3);
+
+      const total = d1 + d2 + d3;
+      const isTai = total >= 11;
+
+      // Cập nhật chuỗi Hash giả lập MD5
+      const randomHash = Math.random().toString(36).substring(2, 12) + Math.random().toString(36).substring(2, 12);
+      document.getElementById('hash-text').innerText = `#20142_${randomHash}{${d1}-${d2}-${d3}}`;
+
+      setTimeout(() => {
+        isRolling = false;
+        if(isTai) {
+          document.getElementById('title-tai').classList.add('tai-active');
+        } else {
+          document.getElementById('title-xiu').classList.add('tai-active');
+        }
+      }, 850);
+    }
+
+    // GAME LOOP ĐẾM NGƯỢC
+    setInterval(() => {
+      timerVal--;
+      if(timerVal < 0) {
+        timerVal = 15;
+        rollDice();
+      }
+      document.getElementById('timer').innerText = timerVal;
+    }, 1000);
+
+    // SAO CHÉP CHUỖI MD5
+    function copyMD5() {
+      const text = document.getElementById('hash-text').innerText;
+      navigator.clipboard.writeText(text);
+      alert('Đã sao chép chuỗi MD5 thành công!');
+    }
+
+    function placeBet(side) {
+      alert(`Đã đặt cược cửa: ${side}`);
+    }
+
+    // Thiết lập vị trí ban đầu
+    setDiceResult('dice-top-left', 5);
+    setDiceResult('dice-top-right', 6);
+    setDiceResult('dice-bottom', 4);
+  </script>
+</body>
+</html>

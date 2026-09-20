@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đấu Trường Thần Đao - TFT Honeycomb Cyber Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #030207;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            user-select: none;
+        }
+        #canvasContainer {
+            position: relative;
+            width: 1100px;
+            height: 650px;
+        }
+        canvas {
+            background: #000;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+            border-radius: 12px;
+            border: 2px solid rgba(168, 85, 247, 0.4);
+            cursor: default;
+        }
+        .hud {
+            position: absolute;
+            top: 15px;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+            width: 100%;
+            z-index: 5;
+        }
+        .game-title {
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            color: #f3e8ff;
+            text-shadow: 0 0 10px rgba(168, 85, 247, 0.8), 0 0 20px #a855f7;
+        }
+        .game-sub {
+            font-size: 12px;
+            color: #a78bfa;
+            letter-spacing: 1px;
+            margin-top: 3px;
+        }
+        .control-panel {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+        }
+        .btn {
+            background: linear-gradient(135deg, #1e1b4b 0%, #311042 100%);
+            border: 2px solid #a855f7;
+            color: #fff;
+            padding: 10px 22px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+            transition: all 0.2s;
+            text-shadow: 0 0 5px #a855f7;
+        }
+        .btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            border-color: #38bdf8;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+        }
+        .btn-start {
+            background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+            border-color: #34d399;
+            box-shadow: 0 0 15px rgba(52, 211, 153, 0.5);
+        }
+        .toast-msg {
+            position: absolute;
+            top: 75px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-10px);
+            background: rgba(15, 23, 42, 0.95);
+            color: #fbbf24;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 15px;
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
+            border: 1px solid #fbbf24;
+            opacity: 0;
+            transition: all 0.3s;
+            pointer-events: none;
+            z-index: 100;
+        }
+        .toast-msg.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Loading Screen Overlay */
+        #loadingScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #090a10;
+            border-radius: 12px;
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px;
+            background-image: radial-gradient(circle at center, #1e1b4b 0%, #030207 80%);
+        }
+        .cards-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            margin-top: 40px;
+            width: 100%;
+        }
+        .loading-card {
+            width: 140px;
+            height: 250px;
+            background: #1e293b;
+            border: 2px solid #fbbf24;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+        .loading-card img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .loading-card .card-info {
+            position: relative;
+            z-index: 2;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            padding: 10px;
+            color: #fff;
+            text-align: center;
+        }
+        .card-info .name {
+            font-size: 13px;
+            font-weight: bold;
+            color: #facc15;
+        }
+        .card-info .title {
+            font-size: 10px;
+            color: #cbd5e1;
+        }
+        .loading-bar-container {
+            width: 80%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .loading-text {
+            color: #fb923c;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-shadow: 0 0 10px rgba(251, 146, 60, 0.8);
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 18px;
+            background: #0f172a;
+            border: 2px solid #f97316;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(249, 115, 22, 0.4);
+        }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #f97316 0%, #facc15 100%);
+            box-shadow: 0 0 15px #facc15;
+            transition: width 0.1s linear;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvasContainer">
+        <div class="hud">
+            <div class="game-title">ĐẤU TRƯỜNG TỔ ONG 3D - CYBER SWORD</div>
+            <div class="game-sub">KÉO THẢ TƯỚNG ➔ GỘP SAO ➔ DÀN TRẬN CHIẾN THUẬT VỚI AI VÀO TRẬN</div>
+        </div>
+
+        <div class="toast-msg" id="toast">Thông báo</div>
+
+        <div class="control-panel">
+            <button class="btn" onclick="buyChampion()">Mua Tướng (3 Vàng)</button>
+            <button class="btn btn-start" onclick="startLoadingPhase()" id="btnBattle">Bắt Đầu Giao Tranh</button>
+            <button class="btn" onclick="clearBoard()">Làm Mới Bàn Cờ</button>
+        </div>
+
+        <!-- Màn hình Loading Vàng Cam thực tế -->
+        <div id="loadingScreen">
+            <div class="cards-container">
+                <div class="loading-card">
+                    <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/loading/Aatrox_0.jpg" alt="Aatrox">
+                    <div class="card-info">
+                        <div class="name">Aatrox</div>
+                        <div class="title">Quỷ Kiếm Ánh Sáng</div>
+                    </div>
+                </div>
+                <div class="loading-card">
+                    <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/loading/Yasuo_0.jpg" alt="Yasuo">
+                    <div class="card-info">
+                        <div class="name">Yasuo</div>
+                        <div class="title">Kẻ Trở Về Tuần Phong</div>
+                    </div>
+                </div>
+                <div class="loading-card">
+                    <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/loading/Ahri_0.jpg" alt="Ahri">
+                    <div class="card-info">
+                        <div class="name">Ahri</div>
+                        <div class="title">Hồ Ly Chín Đuôi</div>
+                    </div>
+                </div>
+                <div class="loading-card">
+                    <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/loading/Garen_0.jpg" alt="Garen">
+                    <div class="card-info">
+                        <div class="name">Garen</div>
+                        <div class="title">Sức Mạnh Demacia</div>
+                    </div>
+                </div>
+                <div class="loading-card">
+                    <img src="https://ddragon.leagueoflegends.com/cdn/img/champion/loading/Katarina_0.jpg" alt="Katarina">
+                    <div class="card-info">
+                        <div class="name">Katarina</div>
+                        <div class="title">Ác Kiếm Noxus</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="loading-bar-container">
+                <div class="loading-text" id="loadingProgressText">ĐANG TẢI VÀO TRẬN... 0%</div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="loadingProgressFill"></div>
+                </div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = 1100;
+canvas.height = 650;
+
+let gameState = 'PLANNING'; // 'PLANNING', 'LOADING', 'BATTLE', 'CAROUSEL'
+let inBattle = false;
+
+// Kích thước ô Lục giác Tổ Ong 3D Isometric
+const BOARD_ROWS = 6;
+const BOARD_COLS = 7;
+const hexRadius = 38;
+const boardGrid = [];
+
+const originX = canvas.width / 2;
+const originY = 190;
+
+for (let r = 0; r < BOARD_ROWS; r++) {
+    boardGrid[r] = [];
+    for (let c = 0; c < BOARD_COLS; c++) {
+        let xOffset = (r % 2 === 1) ? hexRadius * 0.866 : 0;
+        let screenX = originX + (c - BOARD_COLS / 2 + 0.5) * (hexRadius * 1.732) + xOffset;
+        let screenY = originY + r * (hexRadius * 1.25);
+        let scaleFactor = 0.75 + (r * 0.05);
+        
+        boardGrid[r][c] = {
+            row: r, col: c,
+            x: screenX, y: screenY,
+            scale: scaleFactor,
+            isEnemySide: r < 3,
+            champ: null
+        };
+    }
+}
+
+// 9 Hàng Chờ Dự Bị (Bench)
+const benchSlots = [];
+const benchStartY = 565;
+const benchStartX = canvas.width / 2 - (4 * 68);
+for (let i = 0; i < 9; i++) {
+    benchSlots.push({
+        id: i,
+        x: benchStartX + i * 68,
+        y: benchStartY,
+        width: 58,
+        height: 58,
+        champ: null
+    });
+}
+
+// Carousel (Chợ TFT) State
+const carouselCenter = { x: canvas.width / 2, y: canvas.height / 2 - 20 };
+const carouselRadius = 140;
+let carouselAngle = 0;
+let playerAvatar = { x: carouselCenter.x, y: carouselCenter.y, radius: 14, locked: true, releaseTimer: 180 };
+const carouselItems = [];
+
+const playerUnits = [];
+const enemyUnits = [];
+const particles = [];
+const slashes = [];
+
+// Drag & Drop
+let draggedChamp = null;
+let dragSource = null;
+let dragMouseOffset = { x: 0, y: 0 };
+
+class SwordChampion {
+    constructor(star = 1, x = 0, y = 0, team = 'player') {
+        this.star = star;
+        this.team = team;
+        this.x = x;
+        this.y = y;
+        this.targetX = x;
+        this.targetY = y;
+
+        this.maxHp = (star === 1 ? 3000 : (star === 2 ? 5500 : 10000)) * (team === 'enemy' ? 1.1 : 1);
+        this.hp = this.maxHp;
+        this.maxMana = 100;
+        this.mana = 20;
+
+        this.scale = star === 1 ? 0.75 : (star === 2 ? 0.95 : 1.2);
+        this.attackRange = 65;
+        this.attackCooldown = 0;
+        this.isCasting = false;
+        this.castTimer = 0;
+
+        this.direction = team === 'player' ? 1 : -1;
+        this.animTime = Math.random() * 100;
+        this.isMoving = false;
+        this.swordAngle = 0;
+    }
+
+    update() {
+        this.animTime += 0.15;
+
+        let dx = this.targetX - this.x;
+        let dy = this.targetY - this.y;
+        let dist = Math.hypot(dx, dy);
+
+        if (dist > 3) {
+            this.x += dx * 0.12;
+            this.y += dy * 0.12;
+            this.isMoving = true;
+        } else {
+            this.isMoving = false;
+        }
+
+        if (gameState === 'BATTLE' && this.hp > 0 && !draggedChamp) {
+            let targets = this.team === 'player' ? enemyUnits : playerUnits;
+            let aliveTargets = targets.filter(u => u.hp > 0);
+
+            if (aliveTargets.length > 0) {
+                let target = aliveTargets.reduce((prev, curr) => {
+                    let d1 = Math.hypot(prev.x - this.x, prev.y - this.y);
+                    let d2 = Math.hypot(curr.x - this.x, curr.y - this.y);
+                    return d2 < d1 ? curr : prev;
+                });
+
+                let tDist = Math.hypot(target.x - this.x, target.y - this.y);
+                this.direction = target.x >= this.x ? 1 : -1;
+
+                if (tDist > this.attackRange) {
+                    let angle = Math.atan2(target.y - this.y, target.x - this.x);
+                    this.targetX += Math.cos(angle) * 2.2;
+                    this.targetY += Math.sin(angle) * 1.8;
+                } else {
+                    if (this.attackCooldown <= 0 && !this.isCasting) {
+                        this.attackCooldown = 45;
+                        this.swordAngle = Math.PI / 2;
+                        
+                        target.hp -= (150 * this.star);
+                        this.mana = Math.min(this.maxMana, this.mana + 20);
+
+                        slashes.push({
+                            x: target.x, y: target.y - 25,
+                            radius: 30 * this.scale,
+                            color: this.team === 'player' ? '#38bdf8' : '#f43f5e',
+                            alpha: 1
+                        });
+
+                        if (this.mana >= this.maxMana) {
+                            this.castUltimate(target);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (this.attackCooldown > 0) this.attackCooldown--;
+        if (this.swordAngle > 0) this.swordAngle -= 0.1;
+        if (this.isCasting) {
+            this.castTimer--;
+            if (this.castTimer <= 0) this.isCasting = false;
+        }
+    }
+
+    castUltimate(target) {
+        this.mana = 0;
+        this.isCasting = true;
+        this.castTimer = 35;
+
+        showToast(`${this.team === 'player' ? 'TƯỚNG TA' : 'TƯỚNG ĐỊCH'} TUNG BẢO ĐAO CHIÊU KÝ!`);
+
+        for (let i = 0; i < 4; i++) {
+            setTimeout(() => {
+                if (target && target.hp > 0) {
+                    slashes.push({
+                        x: target.x + (Math.random() - 0.5) * 50,
+                        y: target.y - 20 + (Math.random() - 0.5) * 50,
+                        radius: 55 * this.scale,
+                        color: this.star === 3 ? '#eab308' : (this.team === 'player' ? '#a855f7' : '#ef4444'),
+                        alpha: 1
+                    });
+                    createParticles(target.x, target.y - 20, this.team === 'player' ? '#c084fc' : '#f87171', 10);
+                    target.hp -= 300 * this.star;
+                }
+            }, i * 70);
+        }
+    }
+
+    draw(ctx) {
+        if (this.hp <= 0) return;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.scale(this.scale * this.direction, this.scale);
+
+        let primaryColor = this.team === 'player' ? '#a855f7' : '#ef4444';
+        let lightColor = this.team === 'player' ? '#38bdf8' : '#fb923c';
+        if (this.star === 3) { primaryColor = '#eab308'; lightColor = '#fef08a'; }
+
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 18, 7, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.fill();
+
+        let walkOffset = this.isMoving ? Math.sin(this.animTime * 2) * 6 : 0;
+
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(-6 + walkOffset, -12, 4, 12);
+        ctx.fillRect(2 - walkOffset, -12, 4, 12);
+
+        ctx.fillStyle = '#1e293b';
+        ctx.beginPath();
+        ctx.roundRect(-9, -32, 18, 22, 4);
+        ctx.fill();
+        ctx.strokeStyle = primaryColor;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#090d16';
+        ctx.beginPath();
+        ctx.arc(0, -40, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = lightColor;
+        ctx.stroke();
+
+        ctx.fillStyle = lightColor;
+        ctx.fillRect(2, -42, 4, 3);
+
+        ctx.save();
+        ctx.translate(4, -26);
+        let armAngle = Math.sin(this.animTime) * 0.2 - this.swordAngle;
+        ctx.rotate(armAngle);
+
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(0, 0, 4, 14);
+
+        ctx.save();
+        ctx.translate(2, 12);
+        ctx.rotate(-Math.PI / 3);
+
+        ctx.fillStyle = lightColor;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = lightColor;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-4, -45);
+        ctx.lineTo(0, -52);
+        ctx.lineTo(4, -45);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.restore();
+        ctx.restore();
+
+        if (gameState === 'BATTLE' || this.hp < this.maxHp || draggedChamp === this) {
+            let barW = 38 * this.scale;
+            let barX = this.x - barW / 2;
+            let barY = this.y - 58 * this.scale;
+
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillRect(barX, barY, barW, 5);
+            ctx.fillStyle = this.team === 'player' ? '#22c55e' : '#f43f5e';
+            ctx.fillRect(barX, barY, barW * Math.max(0, this.hp / this.maxHp), 5);
+
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillRect(barX, barY + 6, barW, 3);
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(barX, barY + 6, barW * (this.mana / this.maxMana), 3);
+
+            ctx.fillStyle = '#facc15';
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('★'.repeat(this.star), this.x, barY - 3);
+        }
+    }
+}
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// Mua Tướng - CHỈ mua thả vào hàng chờ (KHÔNG gộp sao tự động khi vừa mua)
+function buyChampion() {
+    if (gameState !== 'PLANNING') return;
+
+    let emptySlot = benchSlots.find(s => s.champ === null);
+    if (!emptySlot) {
+        showToast("Hàng chờ đã đầy!");
+        return;
+    }
+
+    let champ = new SwordChampion(1, emptySlot.x + 29, emptySlot.y + 29, 'player');
+    emptySlot.champ = champ;
+    playerUnits.push(champ);
+    showToast("Đã mua tướng mới vào hàng chờ!");
+}
+
+// Gộp Sao Tự Động THỰC TẾ - Chỉ được gọi khi KÉO THẢ TƯỚNG DI CHUYỂN
+function checkAutoMerge() {
+    for (let star = 1; star <= 2; star++) {
+        let sameStar = playerUnits.filter(u => u.star === star);
+        if (sameStar.length >= 3) {
+            let targets = sameStar.slice(0, 3);
+            let survivor = targets[0];
+
+            for (let i = 1; i < 3; i++) {
+                let removeU = targets[i];
+                benchSlots.forEach(s => { if (s.champ === removeU) s.champ = null; });
+                boardGrid.forEach(r => r.forEach(c => { if (c.champ === removeU) c.champ = null; }));
+                let idx = playerUnits.indexOf(removeU);
+                if (idx > -1) playerUnits.splice(idx, 1);
+            }
+
+            survivor.star += 1;
+            survivor.scale = survivor.star === 2 ? 0.95 : 1.2;
+            survivor.maxHp = survivor.star === 2 ? 5500 : 10000;
+            survivor.hp = survivor.maxHp;
+
+            createParticles(survivor.x, survivor.y, '#facc15', 30);
+            showToast(`GỘP SAO THÀNH CÔNG! NÂNG CẤP TƯỚNG ${survivor.star} SAO! 🔥`);
+            checkAutoMerge();
+            break;
+        }
+    }
+}
+
+// 1. CHẾ ĐỘ LOADING THỰC TẾ
+function startLoadingPhase() {
+    if (gameState !== 'PLANNING') return;
+
+    gameState = 'LOADING';
+    const loadingScreen = document.getElementById('loadingScreen');
+    const fill = document.getElementById('loadingProgressFill');
+    const text = document.getElementById('loadingProgressText');
+
+    loadingScreen.style.display = 'flex';
+    let progress = 0;
+    fill.style.width = '0%';
+    text.innerText = 'ĐANG TẢI VÀO TRẬN... 0%';
+
+    let interval = setInterval(() => {
+        progress += Math.floor(Math.random() * 12) + 5;
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(interval);
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+                startBattle();
+            }, 400);
+        }
+        fill.style.width = progress + '%';
+        text.innerText = `ĐANG TẢI VÀO TRẬN... ${progress}%`;
+    }, 150);
+}
+
+// 2. CHẾ ĐỘ GIAO TRANH
+function startBattle() {
+    gameState = 'BATTLE';
+    const btn = document.getElementById('btnBattle');
+    btn.innerText = "Đang Giao Tranh...";
+    btn.style.background = "linear-gradient(135deg, #991b1b 0%, #dc2626 100%)";
+
+    enemyUnits.length = 0;
+    let enemyPositions = [
+        { r: 0, c: 1, star: 1 }, { r: 0, c: 3, star: 2 }, { r: 0, c: 5, star: 1 },
+        { r: 1, c: 2, star: 1 }, { r: 1, c: 4, star: 2 }
+    ];
+
+    enemyPositions.forEach(pos => {
+        let cell = boardGrid[pos.r][pos.c];
+        let enemy = new SwordChampion(pos.star, cell.x, cell.y, 'enemy');
+        enemyUnits.push(enemy);
+    });
+
+    // Tự động kết thúc giao tranh sau 10 giây để chuyển sang Vòng quay Chợ TFT
+    setTimeout(() => {
+        if (gameState === 'BATTLE') {
+            endBattleAndEnterCarousel();
+        }
+    }, 10000);
+}
+
+// 3. KẾT THÚC GIAO TRANH ➔ VÀO VÒNG QUAY CHỢ (CAROUSEL)
+function endBattleAndEnterCarousel() {
+    gameState = 'CAROUSEL';
+    showToast("GIAO TRANH KẾT THÚC ➔ VÀO CHỢ CHỌN ĐỒ!");
+
+    // Khởi tạo đồ/tướng ở Vòng Quay
+    carouselItems.length = 0;
+    const itemsCount = 6;
+    for (let i = 0; i < itemsCount; i++) {
+        carouselItems.push({
+            id: i,
+            angle: (Math.PI * 2 / itemsCount) * i,
+            claimed: false
+        });
+    }
+
+    // Đặt Linh Thú Người Chơi ở BÊN TRONG rào chắn
+    playerAvatar.x = carouselCenter.x;
+    playerAvatar.y = carouselCenter.y;
+    playerAvatar.locked = true;
+    playerAvatar.releaseTimer = 180; // Đợi ~3 giây mới mở barrier
+}
+
+// KÉO THẢ (DRAG & DROP)
+canvas.addEventListener('mousedown', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    if (gameState === 'CAROUSEL' && !playerAvatar.locked) {
+        playerAvatar.x = mx;
+        playerAvatar.y = my;
+        return;
+    }
+
+    if (gameState !== 'PLANNING') return;
+
+    benchSlots.forEach(slot => {
+        if (slot.champ && mx >= slot.x && mx <= slot.x + slot.width && my >= slot.y && my <= slot.y + slot.height) {
+            draggedChamp = slot.champ;
+            dragSource = { type: 'bench', obj: slot };
+            dragMouseOffset = { x: mx - slot.champ.x, y: my - slot.champ.y };
+        }
+    });
+
+    if (!draggedChamp) {
+        for (let r = 3; r < BOARD_ROWS; r++) {
+            for (let c = 0; c < BOARD_COLS; c++) {
+                let cell = boardGrid[r][c];
+                if (cell.champ && Math.hypot(cell.x - mx, cell.y - my) < 30) {
+                    draggedChamp = cell.champ;
+                    dragSource = { type: 'board', obj: cell };
+                    dragMouseOffset = { x: mx - cell.x, y: my - cell.y };
+                }
+            }
+        }
+    }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    if (gameState === 'CAROUSEL' && !playerAvatar.locked && e.buttons === 1) {
+        playerAvatar.x = mx;
+        playerAvatar.y = my;
+        return;
+    }
+
+    if (draggedChamp) {
+        draggedChamp.x = mx - dragMouseOffset.x;
+        draggedChamp.y = my - dragMouseOffset.y;
+        draggedChamp.targetX = draggedChamp.x;
+        draggedChamp.targetY = draggedChamp.y;
+    }
+});
+
+canvas.addEventListener('mouseup', (e) => {
+    if (!draggedChamp || gameState !== 'PLANNING') return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    let placed = false;
+
+    // Thả vào Bàn Cờ Phe Ta
+    for (let r = 3; r < BOARD_ROWS; r++) {
+        for (let c = 0; c < BOARD_COLS; c++) {
+            let cell = boardGrid[r][c];
+            if (Math.hypot(cell.x - mx, cell.y - my) < 35) {
+                if (cell.champ && cell.champ !== draggedChamp) {
+                    let targetChamp = cell.champ;
+                    if (dragSource.type === 'bench') dragSource.obj.champ = targetChamp;
+                    else dragSource.obj.champ = targetChamp;
+
+                    targetChamp.targetX = dragSource.obj.x + (dragSource.type === 'bench' ? 29 : 0);
+                    targetChamp.targetY = dragSource.obj.y + (dragSource.type === 'bench' ? 29 : 0);
+                } else {
+                    dragSource.obj.champ = null;
+                }
+
+                cell.champ = draggedChamp;
+                draggedChamp.targetX = cell.x;
+                draggedChamp.targetY = cell.y;
+                placed = true;
+                break;
+            }
+        }
+        if (placed) break;
+    }
+
+    // Thả vào Hàng Chờ
+    if (!placed) {
+        benchSlots.forEach(slot => {
+            if (mx >= slot.x && mx <= slot.x + slot.width && my >= slot.y && my <= slot.y + slot.height) {
+                if (slot.champ && slot.champ !== draggedChamp) {
+                    let targetChamp = slot.champ;
+                    if (dragSource.type === 'board') dragSource.obj.champ = targetChamp;
+                    else dragSource.obj.champ = targetChamp;
+                } else {
+                    dragSource.obj.champ = null;
+                }
+
+                slot.champ = draggedChamp;
+                draggedChamp.targetX = slot.x + 29;
+                draggedChamp.targetY = slot.y + 29;
+                placed = true;
+            }
+        });
+    }
+
+    if (!placed) {
+        if (dragSource.type === 'bench') {
+            draggedChamp.targetX = dragSource.obj.x + 29;
+            draggedChamp.targetY = dragSource.obj.y + 29;
+        } else {
+            draggedChamp.targetX = dragSource.obj.x;
+            draggedChamp.targetY = dragSource.obj.y;
+        }
+    }
+
+    draggedChamp = null;
+    dragSource = null;
+
+    // KHI KÉO THẢ TƯỚNG VÀO VỊ TRÍ MỚI MỚI TIẾN HÀNH GỘP SAO TỰ ĐỘNG
+    checkAutoMerge();
+});
+
+function clearBoard() {
+    gameState = 'PLANNING';
+    playerUnits.length = 0;
+    enemyUnits.length = 0;
+    benchSlots.forEach(s => s.champ = null);
+    boardGrid.forEach(r => r.forEach(c => c.champ = null));
+    document.getElementById('btnBattle').innerText = "Bắt Đầu Giao Tranh";
+    document.getElementById('btnBattle').style.background = "linear-gradient(135deg, #065f46 0%, #047857 100%)";
+}
+
+function createParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+        particles.push({
+            x: x, y: y,
+            vx: (Math.random() - 0.5) * 6,
+            vy: (Math.random() - 0.5) * 6,
+            radius: Math.random() * 3 + 1,
+            alpha: 1, color: color
+        });
+    }
+}
+
+// VẼ CHỢ VÒNG QUAY (CAROUSEL)
+function drawCarousel(ctx) {
+    // 1. Vẽ Vòng Tròn Rào Chắn (Barrier)
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(carouselCenter.x, carouselCenter.y, 65, 0, Math.PI * 2);
+    ctx.strokeStyle = playerAvatar.locked ? '#fbbf24' : '#22c55e';
+    ctx.lineWidth = 4;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = playerAvatar.locked ? '#fbbf24' : '#22c55e';
+    ctx.stroke();
+
+    ctx.fillStyle = playerAvatar.locked ? 'rgba(251, 191, 36, 0.15)' : 'rgba(34, 197, 94, 0.1)';
+    ctx.fill();
+
+    // 2. Cập nhật thời gian chờ đếm ngược mở Barrier
+    if (playerAvatar.locked) {
+        playerAvatar.releaseTimer--;
+        ctx.fillStyle = '#facc15';
+        ctx.font = 'bold 13px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`ĐỢI ĐẾN LƯỢT: ${Math.ceil(playerAvatar.releaseTimer / 60)}s`, carouselCenter.x, carouselCenter.y - 75);
+
+        if (playerAvatar.releaseTimer <= 0) {
+            playerAvatar.locked = false;
+            showToast("ĐÃ ĐẾN LƯỢT! DI CHUYỂN RA NGOÀI LẤY ĐỒ/TƯỚNG!");
+        }
+    } else {
+        ctx.fillStyle = '#4ade80';
+        ctx.font = 'bold 13px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText("MỜI BẠN RA LẤY ĐỒ!", carouselCenter.x, carouselCenter.y - 75);
+    }
+
+    // 3. Xoay danh sách Tướng/Trang bị xung quanh vòng quay
+    carouselAngle += 0.015;
+    carouselItems.forEach(item => {
+        if (item.claimed) return;
+
+        let currAngle = item.angle + carouselAngle;
+        let ix = carouselCenter.x + Math.cos(currAngle) * carouselRadius;
+        let iy = carouselCenter.y + Math.sin(currAngle) * (carouselRadius * 0.6);
+
+        // Vẽ Tướng/Vật phẩm Vòng quay
+        ctx.beginPath();
+        ctx.arc(ix, iy, 18, 0, Math.PI * 2);
+        ctx.fillStyle = '#1e1b4b';
+        ctx.fill();
+        ctx.strokeStyle = '#a855f7';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText("⚔️", ix, iy + 4);
+
+        // Kiểm tra Linh thú ăn đồ khi đi ra ngoài
+        if (!playerAvatar.locked) {
+            let dist = Math.hypot(playerAvatar.x - ix, playerAvatar.y - iy);
+            if (dist < playerAvatar.radius + 18) {
+                item.claimed = true;
+                createParticles(ix, iy, '#38bdf8', 25);
+                showToast("ĐÃ LẤY TRANG BỊ / TƯỚNG THÀNH CÔNG! 🎁");
+
+                setTimeout(() => {
+                    clearBoard();
+                }, 1500);
+            }
+        }
+    });
+
+    // 4. Vẽ Linh Thú Người Chơi (Avatar)
+    ctx.beginPath();
+    ctx.arc(playerAvatar.x, playerAvatar.y, playerAvatar.radius, 0, Math.PI * 2);
+    ctx.fillStyle = '#38bdf8';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = '#38bdf8';
+
+    ctx.restore();
+}
+
+// VẼ BÀN CỜ LỤC GIÁC TỔ ONG 3D ISOMETRIC
+function draw3DHoneycombBoard() {
+    let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    grad.addColorStop(0, '#020308');
+    grad.addColorStop(0.5, '#0b0f19');
+    grad.addColorStop(1, '#02040a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    for (let r = 0; r < BOARD_ROWS; r++) {
+        for (let c = 0; c < BOARD_COLS; c++) {
+            let cell = boardGrid[r][c];
+            drawHoneycombCell(ctx, cell.x, cell.y, hexRadius * cell.scale, cell.isEnemySide, cell.champ !== null);
+        }
+    }
+
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.strokeStyle = '#a855f7';
+    ctx.lineWidth = 2;
+    ctx.roundRect(benchStartX - 12, benchStartY - 10, (9 * 68) + 12, 76, 10);
+    ctx.fill();
+    ctx.stroke();
+
+    benchSlots.forEach(slot => {
+        ctx.fillStyle = 'rgba(30, 41, 59, 0.6)';
+        ctx.fillRect(slot.x, slot.y, slot.width, slot.height);
+        ctx.strokeStyle = '#475569';
+        ctx.strokeRect(slot.x, slot.y, slot.width, slot.height);
+    });
+}
+
+function drawHoneycombCell(ctx, x, y, r, isEnemy, hasChamp) {
+    ctx.save();
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+        let angle = (Math.PI / 3) * i;
+        let hx = x + r * Math.cos(angle);
+        let hy = y + (r * 0.58) * Math.sin(angle);
+        if (i === 0) ctx.moveTo(hx, hy);
+        else ctx.lineTo(hx, hy);
+    }
+    ctx.closePath();
+
+    if (isEnemy) {
+        ctx.fillStyle = hasChamp ? 'rgba(239, 68, 68, 0.25)' : 'rgba(30, 10, 20, 0.4)';
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.35)';
+    } else {
+        ctx.fillStyle = hasChamp ? 'rgba(56, 189, 248, 0.25)' : 'rgba(15, 23, 42, 0.45)';
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+    }
+
+    ctx.lineWidth = hasChamp ? 2 : 1;
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+}
+
+// GAME LOOP
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    draw3DHoneycombBoard();
+
+    playerUnits.forEach(unit => {
+        unit.update();
+        unit.draw(ctx);
+    });
+
+    enemyUnits.forEach(enemy => {
+        enemy.update();
+        enemy.draw(ctx);
+    });
+
+    if (gameState === 'CAROUSEL') {
+        drawCarousel(ctx);
+    }
+
+    for (let i = slashes.length - 1; i >= 0; i--) {
+        let s = slashes[i];
+        s.alpha -= 0.05;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = s.color;
+        ctx.globalAlpha = s.alpha;
+        ctx.lineWidth = 4;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = s.color;
+        ctx.stroke();
+        ctx.restore();
+
+        if (s.alpha <= 0) slashes.splice(i, 1);
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= 0.03;
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        if (p.alpha <= 0) particles.splice(i, 1);
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+</body>
+</html>

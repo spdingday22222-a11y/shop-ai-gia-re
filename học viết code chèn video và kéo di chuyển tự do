@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video remix </title>
+</head>
+<body>
+    <style>
+        body {
+            background-color: black;
+        }
+    </style>
+    
+     <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background-color: #f0f2f5;
+            overflow: hidden; /* Tránh xuất hiện thanh cuộn khi kéo ra ngoài màn hình */
+            position: relative;
+        }
+
+        /* Khung chứa video có thể kéo thả */
+        #draggable-container {
+            position: absolute;
+            top: 50px;
+            left: 50px;
+            z-index: 1000;
+            background: #222;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            cursor: grab; /* Đổi con trỏ chuột thành hình bàn tay nắm */
+            user-select: none;
+        }
+
+        /* Khi đang nhấn giữ chuột để kéo */
+        #draggable-container:active {
+            cursor: grabbing;
+        }
+
+        /* Thanh tiêu đề giả định để người dùng dễ cầm kéo hơn */
+        .drag-handle {
+            height: 25px;
+            background: #333;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .drag-handle span {
+            width: 40px;
+            height: 4px;
+            background: #777;
+            border-radius: 2px;
+        }
+
+        iframe {
+            display: block;
+            border: none;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+    </style>
+
+    <div id="draggable-container">
+        <div class="drag-handle" id="dragHandle">
+        </div>
+        <iframe width="560" height="315" 
+            src="https://www.youtube.com/embed/8L-vyvO88v4" 
+            title="YouTube video player" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            referrerpolicy="strict-origin-when-cross-origin" 
+            allowfullscreen>
+        </iframe>
+    </div>
+   
+    <script>
+        const container = document.getElementById("draggable-container");
+        const handle = document.getElementById("dragHandle");
+
+        let isDragging = false;
+        let startX, startY;
+        let initialLeft, initialTop;
+
+        // Lắng nghe sự kiện nhấn chuột xuống trên thanh tay cầm (hoặc toàn bộ container)
+        handle.addEventListener("mousedown", startDrag);
+        // Nếu bạn muốn nhấn và kéo trực tiếp vào bất kỳ đâu trên container (trừ iframe), 
+        // hãy đổi `handle` thành `container` và lưu ý iframe có thể chặn sự kiện chuột.
+
+        function startDrag(e) {
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+
+            // Lấy vị trí hiện tại của container
+            initialLeft = container.offsetLeft;
+            initialTop = container.offsetTop;
+
+            // Lắng nghe sự kiện di chuyển chuột và thả chuột trên toàn bộ trang
+            document.addEventListener("mousemove", onDrag);
+            document.addEventListener("mouseup", stopDrag);
+
+            e.preventDefault(); // Ngăn chặn bôi đen văn bản ngoài ý muốn
+        }
+
+        function onDrag(e) {
+            if (!isDragging) return;
+
+            // Tính toán khoảng cách dịch chuyển của chuột
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            // Cập nhật vị trí mới cho container
+            container.style.left = `${initialLeft + dx}px`;
+            container.style.top = `${initialTop + dy}px`;
+        }
+
+        function stopDrag() {
+            isDragging = false;
+            document.removeEventListener("mousemove", onDrag);
+            document.removeEventListener("mouseup", stopDrag);
+        }
+    </script>

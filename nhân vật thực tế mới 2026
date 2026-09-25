@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sát Thủ Bóng Đêm - Kayle Realism Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #020205;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            user-select: none;
+        }
+        canvas {
+            background: radial-gradient(circle at center, #111422 0%, #020205 100%);
+            box-shadow: 0 0 35px rgba(245, 158, 11, 0.25);
+            border-radius: 16px;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        .hud {
+            position: absolute;
+            top: 20px;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+            width: 100%;
+        }
+        .champion-title {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: #fef3c7;
+            text-shadow: 0 0 12px rgba(245, 158, 11, 0.8), 0 0 2px #fff;
+            margin-bottom: 4px;
+        }
+        .champion-sub {
+            font-size: 12px;
+            color: #fde047;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            text-shadow: 0 0 5px rgba(234, 179, 8, 0.5);
+        }
+        .skill-bar {
+            display: flex;
+            gap: 10px;
+            background: rgba(10, 10, 20, 0.85);
+            padding: 8px 20px;
+            border-radius: 25px;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+        }
+        .skill-slot {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 55px;
+        }
+        .skill-key {
+            font-weight: bold;
+            font-size: 11px;
+            color: #fbbf24;
+            margin-bottom: 3px;
+        }
+        .skill-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            background: #1e1b4b;
+            border: 2px solid #f59e0b;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 9px;
+            font-weight: bold;
+            color: #fff;
+            position: relative;
+            text-align: center;
+        }
+        .move-tip {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #cbd5e1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hud">
+        <div class="champion-title">KAYLE - THIÊN THẦN CÔNG NGHỆ</div>
+        <div class="champion-sub">ĐÁNH QUÁI LÊN CẤP 26 - XOAY NINJASHOOK BỔ DIỆT</div>
+        <div class="skill-bar">
+            <div class="skill-slot">
+                <span class="skill-key">A/D</span>
+                <div class="skill-icon">DI CHUYỂN</div>
+            </div>
+            <div class="skill-slot">
+                <span class="skill-key">Q</span>
+                <div class="skill-icon" id="skillQ">BÁN NGUYỆT</div>
+            </div>
+            <div class="skill-slot">
+                <span class="skill-key">W</span>
+                <div class="skill-icon" id="skillW">VỆT LỬA</div>
+            </div>
+            <div class="skill-slot">
+                <span class="skill-key">E</span>
+                <div class="skill-icon" id="skillE">KHÔNG KÍCH</div>
+            </div>
+            <div class="skill-slot">
+                <span class="skill-key">SPACE</span>
+                <div class="skill-icon" id="skillSpace">BỔ DIỆT</div>
+            </div>
+            <div class="skill-slot">
+                <span class="skill-key">R</span>
+                <div class="skill-icon" id="skillR">QUẢ CẦU 7S</div>
+            </div>
+        </div>
+        <div class="move-tip">Bấm phím Q, W, E, Space để Tấn Công Quái & Lên Cấp 26 | Phím R: Quả Cầu 7s</div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = 1000;
+canvas.height = 550;
+
+const keys = { left: false, right: false };
+let lastCombatTime = Date.now();
+
+const cooldowns = {
+    Q: { duration: 350, lastUsed: 0 },
+    W: { duration: 500, lastUsed: 0 },
+    E: { duration: 900, lastUsed: 0 },
+    Space: { duration: 800, lastUsed: 0 },
+    R: { duration: 8000, lastUsed: 0 }
+};
+
+const player = {
+    x: 300,
+    y: 430,
+    vx: 0,
+    vy: 0,
+    speed: 7,
+    gravity: 0.7,
+    jumpForce: -14,
+    groundY: 430,
+    isJumping: false,
+    direction: 1,
+    animTime: 0,
+    isDancing: false,
+    danceTime: 0,
+    
+    // Cấp độ & Kinh nghiệm (Bắt đầu ở Cấp 1, tối đa Cấp 26)
+    level: 1,
+    maxLevel: 26,
+    exp: 0,
+    maxExp: 100,
+
+    // HP To (Máu Vàng Chính) - Trâu hơn khi lên cấp
+    hpTo: 600,
+    maxHpTo: 600,
+
+    // Quả cầu năng lượng 7 giây
+    hasOrb: false,
+    orbTimer: 0,
+
+    // Hiệu ứng xoay Ninja Shook
+    isNinjaSpinning: false,
+    spinAngle: 0
+};
+
+// Quái vật mục tiêu
+const dummy = {
+    x: 750,
+    y: 430,
+    hp: 10000,
+    maxHp: 10000,
+    hitTimer: 0
+};
+
+const slashes = [];
+
+function gainExp(amount) {
+    if (player.level >= player.maxLevel) return;
+    player.exp += amount;
+    if (player.exp >= player.maxExp) {
+        player.exp -= player.maxExp;
+        player.level++;
+        player.maxExp = Math.floor(player.maxExp * 1.25);
+        
+        // Tăng máu tối đa gấp nhiều lần theo cấp độ
+        let prevMaxHp = player.maxHpTo;
+        player.maxHpTo = 600 + (player.level - 1) * 350; 
+        player.hpTo += (player.maxHpTo - prevMaxHp);
+    }
+}
+
+window.addEventListener('keydown', (e) => {
+    const key = e.key.toLowerCase();
+    if (key === 'a' || e.key === 'ArrowLeft') keys.left = true;
+    if (key === 'd' || e.key === 'ArrowRight') keys.right = true;
+
+    const now = Date.now();
+    let castSkill = false;
+
+    // Kỹ năng Q: Bán Nguyệt Thực Tế Bản Cũ
+    if (key === 'q' && now - cooldowns.Q.lastUsed > cooldowns.Q.duration) {
+        cooldowns.Q.lastUsed = now; castSkill = true;
+        player.vx = player.direction * 18;
+        slashes.push({ 
+            type: 'crescent', 
+            x: player.x, 
+            y: player.y - 25, 
+            size: 60, 
+            dir: player.direction, 
+            alpha: 1,
+            vx: player.direction * 14 
+        });
+        gainExp(35);
+    }
+
+    // Kỹ năng W: Vệt Lửa Thực Tế Bản Cũ
+    if (key === 'w' && now - cooldowns.W.lastUsed > cooldowns.W.duration) {
+        cooldowns.W.lastUsed = now; castSkill = true;
+        slashes.push({ 
+            type: 'fireTrail', 
+            x: player.x + player.direction * 30, 
+            y: player.y - 20, 
+            width: 80, 
+            height: 110, 
+            dir: player.direction, 
+            alpha: 1,
+            vx: player.direction * 10
+        });
+        gainExp(40);
+    }
+
+    // Kỹ năng E: Không Kích Thực Tế Bản Cũ
+    if (key === 'e' && now - cooldowns.E.lastUsed > cooldowns.E.duration) {
+        cooldowns.E.lastUsed = now; castSkill = true;
+        player.vy = player.jumpForce - 4;
+        player.isJumping = true;
+        slashes.push({ 
+            type: 'airStrike', 
+            x: player.x, 
+            y: player.y, 
+            radius: 90, 
+            alpha: 1 
+        });
+        gainExp(45);
+    }
+
+    // Phím SPACE: Bổ Diệt Nhảy Liên Tục Xoay Như NinjaShook Thực Tế
+    if (e.key === ' ' && now - cooldowns.Space.lastUsed > cooldowns.Space.duration) {
+        cooldowns.Space.lastUsed = now; castSkill = true;
+        player.vy = -16;
+        player.vx = player.direction * 12;
+        player.isJumping = true;
+        player.isNinjaSpinning = true;
+        player.spinAngle = 0;
+
+        slashes.push({ 
+            type: 'ninjaSlam', 
+            x: player.x + player.direction * 60, 
+            y: player.y - 30, 
+            size: 80, 
+            alpha: 1 
+        });
+        gainExp(60);
+    }
+
+    // Phím R: Quả Cầu Năng Lượng 7s
+    if (key === 'r' && now - cooldowns.R.lastUsed > cooldowns.R.duration) {
+        cooldowns.R.lastUsed = now; castSkill = true;
+        player.hasOrb = true;
+        player.orbTimer = Date.now() + 7000;
+
+        for(let i=0; i<10; i++) {
+            slashes.push({ type: 'explosion', x: player.x + (Math.random()-0.5)*200, y: player.y - 30 + (Math.random()-0.5)*100, size: 60, alpha: 1 });
+        }
+    }
+
+    if (keys.left || keys.right || castSkill) {
+        lastCombatTime = now;
+        player.isDancing = false;
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    const key = e.key.toLowerCase();
+    if (key === 'a' || e.key === 'ArrowLeft') keys.left = false;
+    if (key === 'd' || e.key === 'ArrowRight') keys.right = false;
+});
+
+function update() {
+    player.animTime += 0.15;
+    const now = Date.now();
+
+    if (player.hasOrb && now > player.orbTimer) {
+        player.hasOrb = false;
+    }
+
+    if (now - lastCombatTime > 3000 && Math.abs(player.vx) < 0.1 && !player.isJumping) {
+        player.isDancing = true;
+        player.danceTime += 0.05;
+    } else {
+        player.isDancing = false;
+        player.danceTime = 0;
+    }
+
+    if (keys.left) { player.vx = -player.speed; player.direction = -1; }
+    else if (keys.right) { player.vx = player.speed; player.direction = 1; }
+    else { player.vx *= 0.75; }
+
+    player.vy += player.gravity;
+    player.x += player.vx;
+    player.y += player.vy;
+
+    if (player.x < 50) player.x = 50;
+    if (player.x > canvas.width - 50) player.x = canvas.width - 50;
+
+    if (player.y >= player.groundY) {
+        player.y = player.groundY;
+        player.vy = 0;
+        player.isJumping = false;
+        player.isNinjaSpinning = false;
+    }
+
+    if (player.isNinjaSpinning) {
+        player.spinAngle += 0.45;
+    }
+
+    // Cập nhật đạn & kỹ năng
+    for (let i = slashes.length - 1; i >= 0; i--) {
+        let s = slashes[i];
+        s.alpha -= 0.03;
+
+        if (s.type === 'crescent' || s.type === 'fireTrail') {
+            s.x += s.vx;
+        }
+
+        // Kiểm tra va chạm đánh quái
+        if (Math.abs(s.x - dummy.x) < 80 && Math.abs(s.y - dummy.y) < 80) {
+            dummy.hitTimer = 5;
+            gainExp(2);
+        }
+
+        if (s.alpha <= 0) slashes.splice(i, 1);
+    }
+
+    if (dummy.hitTimer > 0) dummy.hitTimer--;
+}
+
+// 1. THANH MÁU THỰC TẾ: LÊN CẤP 26 TÁCH NHIỀU VẠCH TRÂU HƠN GẤP ĐÔI
+function drawHealthBar(ctx, x, y) {
+    ctx.save();
+    ctx.translate(x - 65, y - 115);
+
+    // Khung viền ngoài
+    ctx.fillStyle = '#0a0d14';
+    ctx.fillRect(-3, -3, 136, 26);
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(-3, -3, 136, 26);
+
+    // Ô Level (Thực tế nâng tối đa 26)
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(-2, -2, 20, 24);
+    ctx.strokeStyle = '#fbbf24';
+    ctx.strokeRect(-2, -2, 20, 24);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 11px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(player.level, 8, 14);
+
+    // --- THANH MÁU TO (MÀU VÀNG) PHÍA TRÊN ---
+    let hpToWidth = 110 * Math.max(0, player.hpTo / player.maxHpTo);
+    let gradGold = ctx.createLinearGradient(20, 0, 20 + hpToWidth, 0);
+    gradGold.addColorStop(0, '#eab308');
+    gradGold.addColorStop(0.5, '#fef08a');
+    gradGold.addColorStop(1, '#ca8a04');
+
+    ctx.fillStyle = '#27272a';
+    ctx.fillRect(20, -1, 110, 13);
+    ctx.fillStyle = gradGold;
+    ctx.fillRect(20, -1, hpToWidth, 13);
+
+    // Vạch chia đoạn HP To (Số vạch tách ra nhiều hơn hẳn theo Cấp độ)
+    let totalTicks = Math.min(40, 6 + player.level * 1.3); // Số vạch tăng nhiều gấp đôi
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < totalTicks; i++) {
+        let tickX = 20 + i * (110 / totalTicks);
+        if (tickX < 20 + hpToWidth) {
+            ctx.beginPath();
+            ctx.moveTo(tickX, -1);
+            ctx.lineTo(tickX, 12);
+            ctx.stroke();
+        }
+    }
+
+    // --- THANH MÁU BÉ BÊN DƯỚI (THANH EXP KHI ĐÁNH QUÁI LÊN CẤP) ---
+    let expWidth = 110 * Math.min(1, player.exp / player.maxExp);
+    let gradBlue = ctx.createLinearGradient(20, 13, 20 + expWidth, 13);
+    gradBlue.addColorStop(0, '#06b6d4');
+    gradBlue.addColorStop(0.5, '#67e8f9');
+    gradBlue.addColorStop(1, '#0284c7');
+
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(20, 13, 110, 8);
+    ctx.fillStyle = gradBlue;
+    ctx.fillRect(20, 13, expWidth, 8);
+
+    ctx.restore();
+}
+
+// 2. QUẢ CẦU NĂNG LƯỢNG THỰC TẾ TRONG 7 GIÂY (CHIÊU R)
+function drawRealisticOrb(ctx, x, y) {
+    ctx.save();
+    ctx.translate(x, y - 25);
+
+    let radius = 60;
+    let time = Date.now() * 0.003;
+
+    let grad = ctx.createRadialGradient(0, 0, radius * 0.1, 0, 0, radius);
+    grad.addColorStop(0, 'rgba(254, 240, 138, 0.2)');
+    grad.addColorStop(0.5, 'rgba(249, 115, 22, 0.5)');
+    grad.addColorStop(0.85, 'rgba(239, 68, 68, 0.8)');
+    grad.addColorStop(1, 'rgba(251, 191, 36, 0.95)');
+
+    ctx.fillStyle = grad;
+    ctx.shadowBlur = 25;
+    ctx.shadowColor = '#f97316';
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Vòng lửa xoay bảo vệ
+    ctx.strokeStyle = 'rgba(254, 243, 199, 0.85)';
+    ctx.lineWidth = 2.5;
+
+    for (let i = 0; i < 3; i++) {
+        ctx.save();
+        ctx.rotate(time + (i * Math.PI / 3));
+        ctx.scale(1, 0.3);
+        ctx.beginPath();
+        ctx.arc(0, 0, radius + 4, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    ctx.restore();
+}
+
+// 3. NÂNG CẤP NHÂN VẬT THỰC TẾ & HIỆU ỨNG XOAY NINJASHOOK
+function drawCharacter(ctx, p) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+
+    if (p.isNinjaSpinning) {
+        ctx.rotate(p.spinAngle * p.direction);
+    }
+
+    let danceOffsetHead = p.isDancing ? Math.sin(p.danceTime * 4) * 3 : 0;
+    let danceOffsetBody = p.isDancing ? Math.cos(p.danceTime * 3) * 2 : 0;
+
+    ctx.scale(p.direction, 1);
+
+    // Cánh cơ khí kép
+    ctx.save();
+    ctx.translate(0, -38 + danceOffsetBody);
+    for (let side of [-1, 1]) {
+        ctx.save();
+        ctx.scale(side, 1);
+        ctx.fillStyle = '#475569';
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 1;
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(-25, -60, -70, -75, -95, -45);
+        ctx.bezierCurveTo(-65, -25, -30, -10, 0, 0);
+        ctx.fill(); ctx.stroke();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.beginPath();
+        ctx.moveTo(-15, -20);
+        ctx.lineTo(-85, -85);
+        ctx.lineTo(-55, -40);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        ctx.restore();
+    }
+    ctx.restore();
+
+    // Chân & Giáp đùi
+    ctx.save();
+    ctx.translate(0, danceOffsetBody);
+    ctx.fillStyle = '#334155';
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1.5;
+    ctx.fillRect(-8, -22, 6, 12);
+    ctx.fillRect(2, -22, 6, 12);
+
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(-7, -10, 5, 10);
+    ctx.fillRect(2, -10, 5, 10);
+
+    ctx.fillStyle = '#cbd5e1';
+    ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(-1, 0); ctx.lineTo(-4, -4); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(1, 0); ctx.lineTo(8, 0); ctx.lineTo(5, -4); ctx.closePath(); ctx.fill();
+    ctx.restore();
+
+    // Thân & Giáp ngực
+    ctx.save();
+    ctx.translate(0, danceOffsetBody);
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(-7, -35, 14, 15);
+
+    ctx.fillStyle = '#475569';
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-9, -36); ctx.lineTo(9, -36); ctx.lineTo(6, -24); ctx.lineTo(-6, -24); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(-3, -40, 6, 5);
+
+    // Đầu & Tóc bạch kim
+    ctx.save();
+    ctx.translate(0, danceOffsetHead);
+    ctx.fillStyle = '#fdba74';
+    ctx.beginPath(); ctx.arc(0, -44, 6.5, 0, Math.PI * 2); ctx.fill();
+
+    ctx.fillStyle = '#0284c7';
+    ctx.fillRect(1, -45, 2, 1.5);
+    ctx.fillStyle = '#475569';
+    ctx.fillRect(0, -47, 3, 1);
+
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.moveTo(-6, -48); ctx.lineTo(-14, -32); ctx.lineTo(-2, -50); ctx.lineTo(8, -32); ctx.lineTo(4, -48); ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // Tay & Kiếm lửa
+    ctx.save();
+    ctx.translate(5, -30 + danceOffsetBody);
+    ctx.rotate(-Math.PI / 4 + Math.sin(p.animTime * 0.5) * 0.12);
+
+    ctx.fillStyle = '#64748b';
+    ctx.fillRect(-3, -2, 6, 12);
+    ctx.fillStyle = '#cbd5e1';
+    ctx.beginPath(); ctx.arc(0, 10, 3, 0, Math.PI * 2); ctx.fill();
+
+    ctx.fillStyle = '#fef08a';
+    ctx.strokeStyle = '#ea580c';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#f59e0b';
+
+    ctx.beginPath();
+    ctx.moveTo(-3, 10); ctx.lineTo(-4, -50); ctx.lineTo(0, -68); ctx.lineTo(4, -50); ctx.lineTo(3, 10); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+
+    ctx.restore();
+    ctx.restore();
+
+    ctx.restore();
+}
+
+function drawDummy(ctx) {
+    ctx.save();
+    ctx.translate(dummy.x, dummy.y);
+
+    // Quái vật Bia Đỡ Đạn
+    ctx.fillStyle = dummy.hitTimer > 0 ? '#ef4444' : '#475569';
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 2;
+
+    ctx.fillRect(-20, -50, 40, 50);
+    ctx.beginPath(); ctx.arc(0, -60, 15, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+    ctx.restore();
+}
+
+function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Mặt đất
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, player.groundY + 1);
+    ctx.lineTo(canvas.width, player.groundY + 1);
+    ctx.stroke();
+
+    // Vẽ Quái Mục Tiêu
+    drawDummy(ctx);
+
+    // 1. Quả Cầu Lửa 3D Bao Bọc (Phím R 7 giây)
+    if (player.hasOrb) {
+        drawRealisticOrb(ctx, player.x, player.y);
+    }
+
+    // 2. Hiệu ứng Kỹ năng Nâng Cấp Thực Tế Bản Cũ
+    slashes.forEach(s => {
+        ctx.save();
+        ctx.globalAlpha = s.alpha;
+
+        if (s.type === 'crescent') {
+            // Chiêu Q - Bán Nguyệt Thực Tế
+            ctx.strokeStyle = '#fbbf24';
+            ctx.fillStyle = '#f59e0b';
+            ctx.lineWidth = 6;
+            ctx.shadowBlur = 20; ctx.shadowColor = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, -Math.PI / 2.5, Math.PI / 2.5);
+            ctx.stroke();
+        } else if (s.type === 'fireTrail') {
+            // Chiêu W - Vệt Lửa Thực Tế
+            let grad = ctx.createLinearGradient(s.x, s.y, s.x + s.width, s.y);
+            grad.addColorStop(0, '#f97316');
+            grad.addColorStop(1, '#ef4444');
+            ctx.fillStyle = grad;
+            ctx.shadowBlur = 25; ctx.shadowColor = '#fef08a';
+            ctx.fillRect(s.x, s.y - s.height/2, s.width, s.height);
+        } else if (s.type === 'airStrike') {
+            // Chiêu E - Không Kích Thực Tế
+            ctx.strokeStyle = '#67e8f9';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.radius * (1.2 - s.alpha), 0, Math.PI * 2);
+            ctx.stroke();
+        } else if (s.type === 'ninjaSlam') {
+            // Phím SPACE - Bổ Diệt NinjaShook
+            ctx.strokeStyle = '#fef08a';
+            ctx.lineWidth = 8;
+            ctx.shadowBlur = 30; ctx.shadowColor = '#f97316';
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.stroke();
+        } else if (s.type === 'explosion') {
+            ctx.fillStyle = '#fde047';
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size * (1 - s.alpha), 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+    });
+
+    // 3. Vẽ Nhân Vật
+    drawCharacter(ctx, player);
+
+    // 4. Vẽ Thanh Máu Thực Tế & Thanh Exp Lên Cấp 26
+    drawHealthBar(ctx, player.x, player.y);
+}
+
+function gameLoop() {
+    update();
+    render();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+</body>
+</html>

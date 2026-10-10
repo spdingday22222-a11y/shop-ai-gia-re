@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rắn Săn Mồi 3D Đẳng Cấp</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #111;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Container Khung Gỗ */
+        .game-wrapper {
+            position: relative;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 15px rgba(255,255,255,0.2);
+            transition: background 1.5s ease, border-color 1.5s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Các kiểu màn gỗ ngẫu nhiên */
+        .wood-theme-1 {
+            background: linear-gradient(135deg, #8B4513, #5C2E0B, #3D1E07);
+            border: 8px solid #A0522D;
+        }
+        .wood-theme-2 {
+            background: linear-gradient(135deg, #D2B48C, #8B5A2B, #4A2E12);
+            border: 8px solid #CD853F;
+        }
+        .wood-theme-3 {
+            background: linear-gradient(135deg, #2F4F4F, #1C3333, #0E1A1A);
+            border: 8px solid #483D8B;
+        }
+
+        /* Thanh Cài Đặt / Điều Khiển */
+        .control-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .info-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .score-board, .lives-board {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .lives-board {
+            color: #FF5252;
+        }
+
+        .speed-selector {
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .speed-selector:hover {
+            border-color: #FFD700;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            background: linear-gradient(180deg, #4CAF50, #2E7D32);
+            color: white;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+        }
+
+        .btn-danger {
+            background: linear-gradient(180deg, #f44336, #c62828);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(180deg, #2196F3, #1565C0);
+        }
+
+        .btn-warning {
+            background: linear-gradient(180deg, #FF9800, #E65100);
+        }
+
+        /* Canvas Game */
+        #gameCanvas {
+            border-radius: 12px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.9), 0 10px 25px rgba(0,0,0,0.5);
+            background-color: #1a1a1a;
+            display: block;
+        }
+
+        /* Modal Cài Đặt / Pause */
+        .modal {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            border-radius: 20px;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #333, #222);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            color: #FFD700;
+        }
+
+        .modal .btn {
+            margin: 8px;
+            width: 150px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-wrapper wood-theme-1" id="gameWrapper">
+        <!-- Thanh công cụ phía trên -->
+        <div class="control-bar">
+            <div class="info-group">
+                <div class="score-board">ĐIỂM: <span id="scoreText">0</span></div>
+                <div class="lives-board">MẠNG: <span id="livesText">❤️❤️</span></div>
+                <select id="speedSelect" class="speed-selector" onchange="changeSpeed(this.value)">
+                    <option value="slow">Chậm</option>
+                    <option value="medium" selected>Chậm Vừa</option>
+                    <option value="normal">Bình Thường</option>
+                    <option value="fast">Nhanh</option>
+                </select>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-warning" onclick="togglePause()">⏸️ Dừng</button>
+                <button class="btn btn-secondary" onclick="togglePause()">⚙️ Cài Đặt</button>
+                <button class="btn" onclick="resetGame()">🔄 Chơi Lại</button>
+            </div>
+        </div>
+
+        <!-- Màn hình chơi Canvas -->
+        <canvas id="gameCanvas" width="600" height="600"></canvas>
+
+        <!-- Popup Menu/Pause -->
+        <div class="modal" id="settingsModal">
+            <div class="modal-content">
+                <h2 id="modalTitle">TẠM DỪNG GAME</h2>
+                <button class="btn" onclick="togglePause()">Tiếp Tục</button><br>
+                <button class="btn btn-secondary" onclick="resetGame()">Chơi Mới</button><br>
+                <button class="btn btn-danger" onclick="exitGame()">Thoát Game</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreText = document.getElementById('scoreText');
+        const livesText = document.getElementById('livesText');
+        const speedSelect = document.getElementById('speedSelect');
+        const gameWrapper = document.getElementById('gameWrapper');
+        const settingsModal = document.getElementById('settingsModal');
+        const modalTitle = document.getElementById('modalTitle');
+
+        // Cấu hình bàn cờ
+        const GRID_SIZE = 15; // 15x15 ô
+        const CELL_SIZE = canvas.width / GRID_SIZE;
+
+        // Trạng thái Game
+        let isPaused = false;
+        let score = 0;
+        let lives = 2; // Khởi đầu 2 mạng
+        let lastTime = 0;
+        let stepInterval = 150; // Mặc định Chậm Vừa
+
+        // Biến nội suy mượt mà (Smoothing)
+        let moveProgress = 0; 
+        let previousSnake = [];
+
+        // Khung gỗ ngẫu nhiên
+        const woodThemes = ['wood-theme-1', 'wood-theme-2', 'wood-theme-3'];
+        let currentThemeIndex = 0;
+
+        // Rắn
+        let snake = [];
+        let direction = { x: 1, y: 0 };
+        let nextDirection = { x: 1, y: 0 };
+        let stretchFactor = 0; // Co giãn đầu rắn
+
+        // Mồi
+        let food = { x: 5, y: 5, type: 'normal' };
+        let particles = []; // Hiệu ứng lấp lánh cho kim cương
+
+        // Đổi tốc độ game từ bảng chọn
+        function changeSpeed(val) {
+            if (val === 'slow') stepInterval = 220;       // Chậm
+            else if (val === 'medium') stepInterval = 150;  // Chậm vừa
+            else if (val === 'normal') stepInterval = 110;  // Bình thường
+            else if (val === 'fast') stepInterval = 75;     // Nhanh
+        }
+
+        // Khởi tạo Game
+        function initGame() {
+            snake = [
+                { x: 7, y: 7 },
+                { x: 6, y: 7 },
+                { x: 5, y: 7 }
+            ];
+            previousSnake = JSON.parse(JSON.stringify(snake));
+            direction = { x: 1, y: 0 };
+            nextDirection = { x: 1, y: 0 };
+            score = 0;
+            lives = 2;
+            scoreText.innerText = score;
+            updateLivesDisplay();
+            spawnFood();
+        }
+
+        // Cập nhật hiển thị Mạng
+        function updateLivesDisplay() {
+            let hearts = '';
+            for (let i = 0; i < lives; i++) hearts += '❤️';
+            livesText.innerText = hearts || '💔';
+        }
+
+        // Xử lý khi mất 1 mạng hoặc Game Over
+        function handleDeath() {
+            lives--;
+            updateLivesDisplay();
+            if (lives > 0) {
+                alert(`Bạn đã mất 1 mạng! Còn lại ${lives} mạng.`);
+                // Reset lại vị trí rắn về giữa an toàn
+                snake = [
+                    { x: 7, y: 7 },
+                    { x: 6, y: 7 },
+                    { x: 5, y: 7 }
+                ];
+                previousSnake = JSON.parse(JSON.stringify(snake));
+                direction = { x: 1, y: 0 };
+                nextDirection = { x: 1, y: 0 };
+                moveProgress = 0;
+            } else {
+                alert(`GAME OVER! Tổng điểm của bạn: ${score}`);
+                // Sau khi bấm OK, tự động chuyển về trạng thái DỪNG (Pause)
+                // để người chơi thoải mái chỉnh lại tốc độ chậm nếu muốn rồi mới bấm Tiếp Tục
+                initGame();
+                isPaused = true;
+                modalTitle.innerText = "CHỌN TỐC ĐỘ & TIẾP TỤC";
+                settingsModal.style.display = 'flex';
+            }
+        }
+
+        // Tạo mồi ngẫu nhiên
+        function spawnFood() {
+            let valid = false;
+            while (!valid) {
+                const fx = Math.floor(Math.random() * GRID_SIZE);
+                const fy = Math.floor(Math.random() * GRID_SIZE);
+                
+                valid = !snake.some(segment => segment.x === fx && segment.y === fy);
+                if (valid) {
+                    const isDiamond = Math.random() < 0.2; // Tỷ lệ xuất hiện kim cương ăn to
+                    food = {
+                        x: fx,
+                        y: fy,
+                        type: isDiamond ? 'diamond' : 'normal'
+                    };
+                }
+            }
+        }
+
+        // Đổi màu màn gỗ ngẫu nhiên mỗi 1.5 phút
+        function startThemeChanger() {
+            setInterval(() => {
+                gameWrapper.classList.remove(woodThemes[currentThemeIndex]);
+                currentThemeIndex = (currentThemeIndex + 1) % woodThemes.length;
+                gameWrapper.classList.add(woodThemes[currentThemeIndex]);
+            }, 90000);
+        }
+
+        // --- HÀM VẼ BÀN CỜ ---
+        function drawBoard() {
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const isEven = (r + c) % 2 === 0;
+                    ctx.fillStyle = isEven ? '#3A3532' : '#2C2725';
+                    ctx.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+
+                    ctx.strokeStyle = 'rgba(10, 10, 10, 0.5)';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                }
+            }
+
+            // Logo chìm giữa bàn cờ
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.font = 'bold 45px Arial';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('PRO SNAKE 3D', 0, 0);
+            ctx.restore();
+        }
+
+        // --- HÀM VẼ RẮN 3D MƯỢT MÀ (DÙNG NỘI SUY LERP) ---
+        function drawSnake() {
+            stretchFactor = Math.sin(Date.now() / 100) * 0.1;
+
+            for (let i = snake.length - 1; i >= 0; i--) {
+                const seg = snake[i];
+                const prevSeg = previousSnake[i] || seg;
+
+                const renderX = (prevSeg.x + (seg.x - prevSeg.x) * moveProgress) * CELL_SIZE + CELL_SIZE / 2;
+                const renderY = (prevSeg.y + (seg.y - prevSeg.y) * moveProgress) * CELL_SIZE + CELL_SIZE / 2;
+
+                ctx.save();
+                ctx.translate(renderX, renderY);
+
+                if (i === 0) {
+                    const angle = Math.atan2(direction.y, direction.x);
+                    ctx.rotate(angle);
+                    ctx.scale(1 + stretchFactor, 1 - stretchFactor);
+
+                    let headGradient = ctx.createRadialGradient(-2, -2, 2, 0, 0, CELL_SIZE / 1.8);
+                    headGradient.addColorStop(0, '#66BB6A');
+                    headGradient.addColorStop(1, '#1B5E20');
+
+                    ctx.fillStyle = headGradient;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, CELL_SIZE / 2.1, CELL_SIZE / 2.4, 0, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#FFF';
+                    ctx.beginPath();
+                    ctx.arc(4, -8, 4, 0, Math.PI * 2);
+                    ctx.arc(4, 8, 4, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(5, -8, 2, 0, Math.PI * 2);
+                    ctx.arc(5, 8, 2, 0, Math.PI * 2);
+                    ctx.fill();
+
+                } else if (i === snake.length - 1) {
+                    const targetPrev = snake[i - 1] || seg;
+                    const tailAngle = Math.atan2(seg.y - targetPrev.y, seg.x - targetPrev.x);
+                    ctx.rotate(tailAngle + Math.PI);
+
+                    let tailGradient = ctx.createRadialGradient(0, 0, 1, 0, 0, CELL_SIZE / 2);
+                    tailGradient.addColorStop(0, '#4CAF50');
+                    tailGradient.addColorStop(1, '#1B5E20');
+
+                    ctx.fillStyle = tailGradient;
+                    ctx.beginPath();
+                    ctx.moveTo(-CELL_SIZE / 2, 0);
+                    ctx.lineTo(CELL_SIZE / 2, -CELL_SIZE / 4);
+                    ctx.lineTo(CELL_SIZE / 2, CELL_SIZE / 4);
+                    ctx.closePath();
+                    ctx.fill();
+
+                } else {
+                    let bodyGradient = ctx.createRadialGradient(-3, -3, 2, 0, 0, CELL_SIZE / 2);
+                    bodyGradient.addColorStop(0, '#4CAF50');
+                    bodyGradient.addColorStop(0.8, '#2E7D32');
+                    bodyGradient.addColorStop(1, '#003300');
+
+                    ctx.fillStyle = bodyGradient;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, CELL_SIZE / 2.2, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, CELL_SIZE / 2.8, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+        }
+
+        // --- VẼ MỒI & KIM CƯƠNG ---
+        function drawFood() {
+            const fx = food.x * CELL_SIZE + CELL_SIZE / 2;
+            const fy = food.y * CELL_SIZE + CELL_SIZE / 2;
+
+            if (food.type === 'diamond') {
+                if (Math.random() < 0.6) {
+                    particles.push({
+                        x: fx + (Math.random() - 0.5) * CELL_SIZE,
+                        y: fy + (Math.random() - 0.5) * CELL_SIZE,
+                        size: Math.random() * 3 + 1,
+                        alpha: 1
+                    });
+                }
+
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let p = particles[i];
+                    ctx.fillStyle = `rgba(0, 229, 255, ${p.alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    p.alpha -= 0.05;
+                    if (p.alpha <= 0) particles.splice(i, 1);
+                }
+
+                ctx.save();
+                ctx.translate(fx, fy);
+                ctx.rotate(Date.now() / 300);
+                
+                ctx.fillStyle = '#00E5FF';
+                ctx.shadowColor = '#00E5FF';
+                ctx.shadowBlur = 15;
+
+                ctx.beginPath();
+                ctx.moveTo(0, -CELL_SIZE / 2.2);
+                ctx.lineTo(CELL_SIZE / 2.2, 0);
+                ctx.lineTo(0, CELL_SIZE / 2.2);
+                ctx.lineTo(-CELL_SIZE / 2.2, 0);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                ctx.restore();
+
+            } else {
+                ctx.save();
+                let appleGradient = ctx.createRadialGradient(fx - 3, fy - 3, 2, fx, fy, CELL_SIZE / 2.5);
+                appleGradient.addColorStop(0, '#FF5252');
+                appleGradient.addColorStop(1, '#B71C1C');
+
+                ctx.fillStyle = appleGradient;
+                ctx.beginPath();
+                ctx.arc(fx, fy, CELL_SIZE / 2.6, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#5D4037';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(fx, fy - CELL_SIZE / 2.6);
+                ctx.lineTo(fx + 2, fy - CELL_SIZE / 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        // Cập nhật Logic Game theo bước
+        function updateGameStep() {
+            previousSnake = JSON.parse(JSON.stringify(snake));
+            direction = nextDirection;
+            const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
+            if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE ||
+                snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+                handleDeath();
+                return;
+            }
+
+            snake.unshift(head);
+
+            if (head.x === food.x && head.y === food.y) {
+                if (food.type === 'diamond') {
+                    score += 50;
+                } else {
+                    score += 10;
+                }
+                scoreText.innerText = score;
+                spawnFood();
+            } else {
+                snake.pop();
+            }
+        }
+
+        // Vòng lặp Render chính
+        function render(currentTime) {
+            if (!lastTime) lastTime = currentTime;
+            const deltaTime = currentTime - lastTime;
+
+            if (!isPaused) {
+                moveProgress += deltaTime / stepInterval;
+                if (moveProgress >= 1) {
+                    moveProgress = 0;
+                    updateGameStep();
+                    lastTime = currentTime;
+                }
+            } else {
+                lastTime = currentTime;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBoard();
+            drawFood();
+            drawSnake();
+
+            requestAnimationFrame(render);
+        }
+
+        // Điều hướng bàn phím
+        window.addEventListener('keydown', e => {
+            switch (e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    if (direction.y === 0) nextDirection = { x: 0, y: -1 };
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    if (direction.y === 0) nextDirection = { x: 0, y: 1 };
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    if (direction.x === 0) nextDirection = { x: -1, y: 0 };
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    if (direction.x === 0) nextDirection = { x: 1, y: 0 };
+                    break;
+                case ' ':
+                case 'Escape':
+                    togglePause();
+                    break;
+            }
+        });
+
+        function togglePause() {
+            isPaused = !isPaused;
+            modalTitle.innerText = isPaused ? "TẠM DỪNG GAME" : "CÀI ĐẶT GAME";
+            settingsModal.style.display = isPaused ? 'flex' : 'none';
+        }
+
+        function resetGame() {
+            if (isPaused) togglePause();
+            initGame();
+        }
+
+        function exitGame() {
+            alert("Cảm ơn bạn đã chơi game!");
+            window.close();
+        }
+
+        // Khởi chạy
+        initGame();
+        startThemeChanger();
+        requestAnimationFrame(render);
+    </script>
+</body>
+</html>

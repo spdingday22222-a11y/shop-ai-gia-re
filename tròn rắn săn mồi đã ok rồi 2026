@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rắn Săn Mồi 3D Đỉnh Cao - Ultimate Edition</title>
+    <!-- Tailwind CSS for UI Layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+        
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            font-family: 'Fredoka', cursive, sans-serif;
+        }
+
+        body {
+            background: #090d16;
+            overflow: hidden;
+            color: #fff;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(217, 119, 6, 0.5);
+            border-radius: 4px;
+        }
+
+        /* Wooden Texture Glassmorphism Effect */
+        .wood-panel {
+            background: linear-gradient(145deg, rgba(38, 22, 11, 0.92), rgba(20, 11, 5, 0.95));
+            backdrop-filter: blur(16px);
+            border: 3px solid #b45309;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9), inset 0 0 20px rgba(217, 119, 6, 0.3);
+        }
+
+        .btn-wood {
+            background: linear-gradient(135deg, #b45309 0%, #78350f 100%);
+            border: 2px solid #f59e0b;
+            box-shadow: 0 4px 0 #451a03, 0 6px 12px rgba(0,0,0,0.5);
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-wood:hover {
+            filter: brightness(1.15);
+        }
+
+        .btn-wood:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #451a03, 0 2px 5px rgba(0,0,0,0.4);
+        }
+
+        .btn-green {
+            background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+            border: 2px solid #6ee7b7;
+            box-shadow: 0 4px 0 #064e3b, 0 6px 12px rgba(0,0,0,0.5);
+            transition: all 0.15s ease;
+        }
+
+        .btn-green:hover {
+            filter: brightness(1.15);
+        }
+
+        .btn-green:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #064e3b, 0 2px 5px rgba(0,0,0,0.4);
+        }
+
+        .btn-red {
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            border: 2px solid #fca5a5;
+            box-shadow: 0 4px 0 #7f1d1d, 0 6px 12px rgba(0,0,0,0.5);
+            transition: all 0.15s ease;
+        }
+
+        .btn-red:hover {
+            filter: brightness(1.15);
+        }
+
+        .btn-red:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #7f1d1d, 0 2px 5px rgba(0,0,0,0.4);
+        }
+
+        /* Canvas Container Styling */
+        #game-container {
+            position: relative;
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.95), 0 0 30px rgba(180, 83, 9, 0.2);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        /* Enhanced Neon Metallic Logo HUD */
+        .logo-text {
+            background: linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #10b981 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.6));
+        }
+
+        .logo-icon {
+            filter: drop-shadow(0 0 10px #10b981);
+            animation: logo-glow 3s infinite alternate ease-in-out;
+        }
+
+        @keyframes logo-glow {
+            0% { filter: drop-shadow(0 0 6px #10b981); transform: scale(1); }
+            100% { filter: drop-shadow(0 0 18px #34d399); transform: scale(1.08); }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-2 md:p-4">
+
+    <!-- TOP HEADER / HUD -->
+    <div class="w-full max-w-4xl flex justify-between items-center mb-3 px-4 py-2.5 wood-panel rounded-2xl">
+        <div class="flex items-center gap-4">
+            <!-- Nâng Cấp Logo Brand Nét Đỉnh Cao -->
+            <div class="flex items-center gap-2.5 font-black text-xl md:text-2xl tracking-wider cursor-pointer">
+                <i class="fa-solid fa-staff-snake text-emerald-400 text-2xl md:text-3xl logo-icon"></i>
+                <span class="logo-text font-black tracking-widest uppercase">
+                    SNAKE 3D
+                </span>
+            </div>
+
+            <!-- Score Display -->
+            <div class="flex items-center gap-2 bg-black/50 px-3.5 py-1.5 rounded-xl border border-amber-500/30">
+                <i class="fa-solid fa-trophy text-amber-400 text-sm md:text-base"></i>
+                <span class="text-xs text-amber-200/70 font-semibold uppercase hidden sm:inline">Điểm:</span>
+                <span id="score-text" class="text-lg md:text-2xl font-black text-amber-300">0</span>
+            </div>
+
+            <!-- High Score Display -->
+            <div class="flex items-center gap-2 bg-black/50 px-3.5 py-1.5 rounded-xl border border-amber-500/30 hidden md:flex">
+                <i class="fa-solid fa-crown text-yellow-400 text-sm md:text-base"></i>
+                <span class="text-xs text-amber-200/70 font-semibold uppercase">Kỷ kỷ lục:</span>
+                <span id="highscore-text" class="text-lg md:text-xl font-bold text-yellow-300">0</span>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-2">
+            <!-- Theme Countdown Badge -->
+            <div class="hidden sm:flex items-center gap-1.5 bg-amber-950/70 border border-amber-600/50 px-3 py-1.5 rounded-xl text-xs text-amber-200">
+                <i class="fa-solid fa-layer-group text-amber-400"></i>
+                <span>Sàn 3D: <span id="theme-name-display" class="font-bold text-amber-300">Gỗ Óc Chó</span> (<span id="theme-timer" class="font-bold text-white">120</span>s)</span>
+            </div>
+
+            <!-- Settings Button -->
+            <button id="btn-settings" class="btn-wood text-amber-100 p-2.5 rounded-xl text-lg flex items-center justify-center">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+
+            <!-- Pause/Play Button -->
+            <button id="btn-pause" class="btn-wood text-amber-100 p-2.5 rounded-xl text-lg flex items-center justify-center">
+                <i id="pause-icon" class="fa-solid fa-pause"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- GAME CANVAS CONTAINER -->
+    <div id="game-container" class="relative w-full max-w-4xl aspect-[4/3] md:aspect-[16/10] bg-stone-950 border-4 border-amber-700/80">
+        <canvas id="snakeCanvas" class="w-full h-full block"></canvas>
+
+        <!-- START / PAUSE / GAMEOVER OVERLAYS -->
+        <div id="overlay-menu" class="absolute inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-4 z-20 transition-all duration-300">
+            <div class="wood-panel p-6 md:p-8 rounded-3xl max-w-md w-full text-center relative border-amber-600">
+                
+                <!-- Close Button -->
+                <button id="btn-close-overlay" class="absolute top-3 right-3 text-amber-400 hover:text-white bg-black/40 hover:bg-black/60 w-8 h-8 rounded-full flex items-center justify-center transition border border-amber-800">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+
+                <div class="flex justify-center mb-2">
+                    <i class="fa-solid fa-staff-snake text-5xl text-emerald-400 logo-icon"></i>
+                </div>
+                <h1 id="overlay-title" class="text-3xl md:text-4xl font-black text-amber-400 mb-1 drop-shadow-md">RẮN SĂN Mồi 3D</h1>
+                <p id="overlay-subtitle" class="text-stone-300 text-xs md:text-sm mb-5">Di chuyển chuyển động siêu mượt 60FPS, Sàn gỗ 3D sắc nét đỉnh cao!</p>
+
+                <!-- Difficulty Selector -->
+                <div class="mb-5 bg-black/50 p-3 rounded-2xl border border-amber-900/60">
+                    <label class="block text-amber-300 text-xs font-bold uppercase mb-2">Mức Độ Khó (Tốc độ)</label>
+                    <div class="grid grid-cols-4 gap-1.5">
+                        <button class="btn-diff btn-wood text-xs py-2 rounded-xl border border-amber-700 opacity-70" data-speed="140">Dễ</button>
+                        <button class="btn-diff btn-green text-xs py-2 rounded-xl font-bold" data-speed="100">Thường</button>
+                        <button class="btn-diff btn-wood text-xs py-2 rounded-xl border border-amber-700 opacity-70" data-speed="70">Khó</button>
+                        <button class="btn-diff btn-red text-xs py-2 rounded-xl border border-red-700 font-bold opacity-70" data-speed="45">Cực Khó</button>
+                    </div>
+                </div>
+
+                <!-- Final Score Summary (When Game Over) -->
+                <div id="score-summary" class="hidden mb-5 bg-black/60 p-3.5 rounded-2xl border border-amber-700/80">
+                    <div class="flex justify-around text-center">
+                        <div>
+                            <span class="text-xs text-stone-400 block font-semibold">ĐIỂM SỐ</span>
+                            <span id="final-score" class="text-2xl font-black text-amber-400">0</span>
+                        </div>
+                        <div class="border-r border-amber-900/80"></div>
+                        <div>
+                            <span class="text-xs text-stone-400 block font-semibold">KỶ LỤC</span>
+                            <span id="final-highscore" class="text-2xl font-black text-yellow-300">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Controls -->
+                <div class="flex flex-col gap-3">
+                    <button id="btn-play-start" class="btn-green text-white font-bold text-lg py-3 rounded-2xl flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-play"></i> BẮT ĐẦU CHƠI
+                    </button>
+                    <button id="btn-free-mode" class="btn-wood text-amber-200 font-bold text-sm py-2.5 rounded-2xl flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-gamepad"></i> CHƠI TỰ DO (KHÔNG CHẾT)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS MODAL -->
+        <div id="modal-settings" class="hidden absolute inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-30">
+            <div class="wood-panel p-6 rounded-3xl max-w-sm w-full relative">
+                <button id="btn-close-settings" class="absolute top-3 right-3 text-stone-400 hover:text-white w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+                
+                <h2 class="text-2xl font-bold text-amber-400 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders"></i> CÀI ĐẶT GAME
+                </h2>
+
+                <div class="space-y-3.5">
+                    <!-- Audio Toggle -->
+                    <div class="flex justify-between items-center bg-black/50 p-3 rounded-xl border border-amber-900/40">
+                        <span class="text-stone-200 text-sm font-semibold">Âm Thanh / Hiệu Ứng</span>
+                        <input type="checkbox" id="toggle-sound" checked class="w-5 h-5 accent-emerald-500 cursor-pointer">
+                    </div>
+
+                    <!-- Wall Collision Toggle -->
+                    <div class="flex justify-between items-center bg-black/50 p-3 rounded-xl border border-amber-900/40">
+                        <div>
+                            <span class="text-stone-200 text-sm font-semibold block">Đâm Vào Tường</span>
+                            <span class="text-xs text-stone-400">Xuyên tường hoặc Thua cuộc</span>
+                        </div>
+                        <input type="checkbox" id="toggle-wall" checked class="w-5 h-5 accent-emerald-500 cursor-pointer">
+                    </div>
+
+                    <!-- Manual Board Style Swap -->
+                    <div class="bg-black/50 p-3 rounded-xl border border-amber-900/40">
+                        <label class="text-stone-200 text-sm font-semibold block mb-2">Đổi Khung Gỗ & Sàn Mới</label>
+                        <button id="btn-change-theme" class="btn-wood text-amber-200 text-xs w-full py-2.5 rounded-xl font-bold">
+                            <i class="fa-solid fa-palette mr-1.5"></i> ĐỔI CHỦ ĐỀ SÀN 3D NEXT
+                        </button>
+                    </div>
+
+                    <!-- Exit / Restart Buttons -->
+                    <div class="pt-2 grid grid-cols-2 gap-2">
+                        <button id="btn-restart-game" class="btn-wood text-amber-200 text-xs py-2.5 rounded-xl font-bold">
+                            <i class="fa-solid fa-rotate-right mr-1"></i> Chơi Lại
+                        </button>
+                        <button id="btn-exit-game" class="btn-red text-white text-xs py-2.5 rounded-xl font-bold">
+                            <i class="fa-solid fa-door-open mr-1"></i> Thoát
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAUSE INDICATOR BANNER -->
+        <div id="pause-banner" class="hidden absolute top-4 left-1/2 -translate-x-1/2 bg-amber-950/90 border-2 border-amber-500 text-amber-300 font-bold px-6 py-2 rounded-full shadow-2xl z-10 flex items-center gap-2">
+            <i class="fa-solid fa-pause text-amber-400"></i> ĐÃ TẠM DỪNG GAME
+        </div>
+    </div>
+
+    <!-- TOUCH / ON-SCREEN CONTROLS FOR MOBILE -->
+    <div class="w-full max-w-xs mt-3 grid grid-cols-3 gap-2 md:hidden">
+        <div></div>
+        <button id="btn-touch-up" class="btn-wood p-4 rounded-2xl text-amber-200 text-xl flex justify-center items-center">
+            <i class="fa-solid fa-arrow-up"></i>
+        </button>
+        <div></div>
+        <button id="btn-touch-left" class="btn-wood p-4 rounded-2xl text-amber-200 text-xl flex justify-center items-center">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <button id="btn-touch-down" class="btn-wood p-4 rounded-2xl text-amber-200 text-xl flex justify-center items-center">
+            <i class="fa-solid fa-arrow-down"></i>
+        </button>
+        <button id="btn-touch-right" class="btn-wood p-4 rounded-2xl text-amber-200 text-xl flex justify-center items-center">
+            <i class="fa-solid fa-arrow-right"></i>
+        </button>
+    </div>
+
+    <!-- FOOTER HINTS -->
+    <div class="mt-3 text-center text-xs text-stone-400 flex flex-wrap justify-center gap-4">
+        <span><i class="fa-solid fa-keyboard mr-1"></i> Điều khiển: <b>Mũi tên / WASD</b></span>
+        <span><i class="fa-solid fa-space-shuttle mr-1"></i> Dấu cách: <b>Tạm dừng</b></span>
+        <span><i class="fa-solid fa-circle text-stone-900 bg-amber-400 rounded-full p-0.5 mr-1"></i> Black Orb Diamond: <b>+50 Điểm & Tăng Dài</b></span>
+    </div>
+
+    <!-- GAME LOGIC SCRIPT -->
+    <script>
+        // --- AUDIO SYNTHESIZER ---
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playEat(isBig = false, isDiamond = false) {
+                if (!this.enabled) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                const now = this.ctx.currentTime;
+                if (isDiamond) {
+                    // Deep mystic chime sound for Black Orb Diamond
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now); // A4
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
+                    osc.frequency.exponentialRampToValueAtTime(1320, now + 0.35); // E6
+                    gain.gain.setValueAtTime(0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (isBig) {
+                    // Juicy deep tone
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(500, now + 0.18);
+                    gain.gain.setValueAtTime(0.35, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else {
+                    // Quick crisp bite tone
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(320, now);
+                    osc.frequency.exponentialRampToValueAtTime(640, now + 0.08);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                }
+            }
+
+            playGameOver() {
+                if (!this.enabled) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                const now = this.ctx.currentTime;
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.linearRampToValueAtTime(50, now + 0.45);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+                osc.start(now);
+                osc.stop(now + 0.45);
+            }
+        }
+
+        const sound = new SoundFX();
+
+        // --- GAME ENGINE & BOARD SETUP ---
+        const canvas = document.getElementById('snakeCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Grid Dimensions
+        const GRID_COLS = 20;
+        const GRID_ROWS = 15;
+        let cellWidth = 0;
+        let cellHeight = 0;
+
+        // Game State Variables
+        let gameRunning = false;
+        let isPaused = false;
+        let freeMode = false;
+        let wallCollision = true;
+        let score = 0;
+        let highScore = localStorage.getItem('snake_3d_highscore') || 0;
+        document.getElementById('highscore-text').textContent = highScore;
+
+        // Speed Settings (ms per logic step)
+        let gameSpeed = 100;
+        let lastStepTime = 0;
+
+        // Snake Smooth Interpolation Physics
+        let dir = { x: 1, y: 0 };
+        let nextDir = { x: 1, y: 0 };
+        let snake = []; // Logical Grid Coordinates [{x, y}]
+        let prevSnake = []; // For smooth interpolation rendering
+        let renderProgress = 1.0; // 0.0 to 1.0 interpolation factor
+
+        // Foods & Diamonds
+        let food = null;
+        let diamond = null; // Black Orb Diamond
+
+        // Particles for Visual Polish
+        let particles = [];
+
+        // Animation Frame Timer for Snake Tongue & Pulsing Effects
+        let animTicks = 0;
+
+        // --- NÂNG CẤP 4 BỘ VÂN GỖ & SÀN 3D MỚI NÉT CĂNG ---
+        const WOOD_THEMES = [
+            {
+                name: 'Gỗ Óc Chó Walnut',
+                borderOuter: '#2d1500',
+                borderInner: '#5c2d0c',
+                tileDark: '#1f130b',
+                tileLight: '#332014',
+                gridLine: '#120a05',
+                grainColor: 'rgba(0, 0, 0, 0.22)',
+                glow: '#f59e0b'
+            },
+            {
+                name: 'Gỗ Mạ Vàng Cổ Điển',
+                borderOuter: '#3d2600',
+                borderInner: '#855800',
+                tileDark: '#2b1e06',
+                tileLight: '#42300c',
+                gridLine: '#1a1200',
+                grainColor: 'rgba(255, 215, 0, 0.06)',
+                glow: '#fbbf24'
+            },
+            {
+                name: 'Băng Ngọc Emerald',
+                borderOuter: '#022c22',
+                borderInner: '#065f46',
+                tileDark: '#041f1a',
+                tileLight: '#0d332b',
+                gridLine: '#011410',
+                grainColor: 'rgba(52, 211, 153, 0.08)',
+                glow: '#10b981'
+            },
+            {
+                name: 'Đá Cẩm Thạch Obsidian',
+                borderOuter: '#0f172a',
+                borderInner: '#334155',
+                tileDark: '#090d16',
+                tileLight: '#1e293b',
+                gridLine: '#030712',
+                grainColor: 'rgba(255, 255, 255, 0.04)',
+                glow: '#38bdf8'
+            }
+        ];
+        let currentThemeIndex = 0;
+        let themeTimerSeconds = 120;
+        let themeInterval = null;
+
+        // --- RESIZE CANVAS HANDLING ---
+        function resizeCanvas() {
+            const container = document.getElementById('game-container');
+            const rect = container.getBoundingClientRect();
+            
+            canvas.width = rect.width * (window.devicePixelRatio || 1);
+            canvas.height = rect.height * (window.devicePixelRatio || 1);
+
+            cellWidth = canvas.width / GRID_COLS;
+            cellHeight = canvas.height / GRID_ROWS;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- INITIALIZE GAME STATE ---
+        function initGame() {
+            const startX = Math.floor(GRID_COLS / 3);
+            const startY = Math.floor(GRID_ROWS / 2);
+            
+            snake = [
+                { x: startX, y: startY },
+                { x: startX - 1, y: startY },
+                { x: startX - 2, y: startY },
+                { x: startX - 3, y: startY }
+            ];
+
+            // Deep clone for smooth render interpolation
+            prevSnake = snake.map(p => ({ ...p }));
+
+            dir = { x: 1, y: 0 };
+            nextDir = { x: 1, y: 0 };
+            score = 0;
+            updateScoreUI();
+
+            spawnFood();
+            diamond = null;
+            particles = [];
+
+            gameRunning = true;
+            isPaused = false;
+            document.getElementById('pause-banner').classList.add('hidden');
+            document.getElementById('pause-icon').className = 'fa-solid fa-pause';
+
+            startThemeTimer();
+        }
+
+        // --- SPAWNING FOOD & BLACK ORB DIAMOND ---
+        function spawnFood() {
+            let valid = false;
+            let fx, fy;
+
+            while (!valid) {
+                fx = Math.floor(Math.random() * GRID_COLS);
+                fy = Math.floor(Math.random() * GRID_ROWS);
+                valid = !snake.some(seg => seg.x === fx && seg.y === fy);
+            }
+
+            const isBig = Math.random() < 0.25;
+            food = {
+                x: fx,
+                y: fy,
+                isBig: isBig,
+                points: isBig ? 30 : 10
+            };
+        }
+
+        function trySpawnDiamond() {
+            if (diamond || Math.random() > 0.4) return; // 40% chance
+
+            let valid = false;
+            let dx, dy;
+            while (!valid) {
+                dx = Math.floor(Math.random() * GRID_COLS);
+                dy = Math.floor(Math.random() * GRID_ROWS);
+                valid = !snake.some(seg => seg.x === dx && seg.y === dy) &&
+                        !(food && food.x === dx && food.y === dy);
+            }
+
+            // Nâng cấp: Black Orb Diamond (Cầu tròn đen nhấp nháy phát sáng ma mị)
+            diamond = {
+                x: dx,
+                y: dy,
+                points: 50,
+                life: 350,
+                maxLife: 350
+            };
+        }
+
+        // --- THEME SWAPPING SYSTEM ---
+        function startThemeTimer() {
+            if (themeInterval) clearInterval(themeInterval);
+            themeTimerSeconds = 120;
+            updateThemeUI();
+
+            themeInterval = setInterval(() => {
+                if (!gameRunning || isPaused) return;
+                themeTimerSeconds--;
+                document.getElementById('theme-timer').textContent = themeTimerSeconds;
+
+                if (themeTimerSeconds <= 0) {
+                    switchTheme();
+                    themeTimerSeconds = 120;
+                }
+            }, 1000);
+        }
+
+        function switchTheme() {
+            currentThemeIndex = (currentThemeIndex + 1) % WOOD_THEMES.length;
+            updateThemeUI();
+            createBurstParticles(canvas.width / 2, canvas.height / 2, WOOD_THEMES[currentThemeIndex].glow, 35);
+        }
+
+        function updateThemeUI() {
+            document.getElementById('theme-name-display').textContent = WOOD_THEMES[currentThemeIndex].name;
+        }
+
+        // --- PARTICLE EFFECT SYSTEM ---
+        function createBurstParticles(x, y, color, count = 20) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 7 + 2;
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    radius: Math.random() * 4.5 + 2,
+                    color: color,
+                    life: 1.0,
+                    decay: Math.random() * 0.03 + 0.015
+                });
+            }
+        }
+
+        function updateAndDrawParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= p.decay;
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // --- GAME STEP LOGIC ---
+        function gameStep() {
+            // Save current positions into prevSnake for smooth interpolation
+            prevSnake = snake.map(p => ({ ...p }));
+
+            // Update Direction
+            dir = { ...nextDir };
+
+            // Next Head Grid Position
+            let newHead = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+            // Wall Collision Check
+            if (newHead.x < 0 || newHead.x >= GRID_COLS || newHead.y < 0 || newHead.y >= GRID_ROWS) {
+                if (wallCollision && !freeMode) {
+                    gameOver();
+                    return;
+                } else {
+                    // Wrap around screen seamlessly
+                    if (newHead.x < 0) newHead.x = GRID_COLS - 1;
+                    if (newHead.x >= GRID_COLS) newHead.x = 0;
+                    if (newHead.y < 0) newHead.y = GRID_ROWS - 1;
+                    if (newHead.y >= GRID_ROWS) newHead.y = 0;
+
+                    // Fix interpolation gap on screen wrap
+                    prevSnake[0] = { ...newHead };
+                }
+            }
+
+            // Self Collision Check
+            if (!freeMode) {
+                for (let i = 0; i < snake.length; i++) {
+                    if (snake[i].x === newHead.x && snake[i].y === newHead.y) {
+                        gameOver();
+                        return;
+                    }
+                }
+            }
+
+            // Move Snake Head
+            snake.unshift(newHead);
+
+            let ate = false;
+
+            // Eat Food
+            if (food && newHead.x === food.x && newHead.y === food.y) {
+                score += food.points;
+                sound.playEat(food.isBig, false);
+                createBurstParticles(
+                    (food.x + 0.5) * cellWidth,
+                    (food.y + 0.5) * cellHeight,
+                    food.isBig ? '#f59e0b' : '#ef4444',
+                    food.isBig ? 28 : 16
+                );
+
+                if (food.isBig) {
+                    snake.push({ ...snake[snake.length - 1] });
+                }
+
+                spawnFood();
+                trySpawnDiamond();
+                updateScoreUI();
+                ate = true;
+            }
+
+            // Eat Black Orb Diamond
+            if (diamond && newHead.x === diamond.x && newHead.y === diamond.y) {
+                score += diamond.points;
+                sound.playEat(false, true);
+                createBurstParticles(
+                    (diamond.x + 0.5) * cellWidth,
+                    (diamond.y + 0.5) * cellHeight,
+                    '#38bdf8',
+                    40
+                );
+
+                // Add 2 extra tail segments
+                snake.push({ ...snake[snake.length - 1] });
+                snake.push({ ...snake[snake.length - 1] });
+
+                diamond = null;
+                updateScoreUI();
+                ate = true;
+            }
+
+            // If no food eaten, drop tail segment
+            if (!ate) {
+                snake.pop();
+            }
+
+            // Diamond life countdown
+            if (diamond) {
+                diamond.life--;
+                if (diamond.life <= 0) diamond = null;
+            }
+        }
+
+        // --- MAIN RENDER LOOP WITH SMOOTH INTERPOLATION ---
+        function loop(timestamp) {
+            animTicks++;
+
+            if (gameRunning && !isPaused) {
+                if (!lastStepTime) lastStepTime = timestamp;
+                const elapsed = timestamp - lastStepTime;
+
+                if (elapsed > gameSpeed) {
+                    lastStepTime = timestamp;
+                    gameStep();
+                    renderProgress = 0;
+                } else {
+                    renderProgress = elapsed / gameSpeed;
+                }
+            }
+
+            render();
+            requestAnimationFrame(loop);
+        }
+
+        // --- RENDER 3D SCENE ---
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const theme = WOOD_THEMES[currentThemeIndex];
+
+            // 1. Outer Frame Border 3D
+            ctx.fillStyle = theme.borderOuter;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const frameSize = Math.min(cellWidth, cellHeight) * 0.18;
+            ctx.fillStyle = theme.borderInner;
+            ctx.fillRect(frameSize, frameSize, canvas.width - frameSize * 2, canvas.height - frameSize * 2);
+
+            // 2. Realistic 3D Board Tiles with Wood Grain Pattern
+            for (let r = 0; r < GRID_ROWS; r++) {
+                for (let c = 0; c < GRID_COLS; c++) {
+                    const x = c * cellWidth;
+                    const y = r * cellHeight;
+
+                    const isEven = (r + c) % 2 === 0;
+                    ctx.fillStyle = isEven ? theme.tileLight : theme.tileDark;
+                    ctx.fillRect(x, y, cellWidth, cellHeight);
+
+                    // Tile Inset Bevel & Grid
+                    ctx.strokeStyle = theme.gridLine;
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeRect(x, y, cellWidth, cellHeight);
+
+                    // Wood Grain Texture Overlay
+                    ctx.fillStyle = theme.grainColor;
+                    ctx.fillRect(x + 2, y + cellHeight * 0.3, cellWidth - 4, 2);
+                    ctx.fillRect(x + 4, y + cellHeight * 0.7, cellWidth - 8, 1.5);
+                }
+            }
+
+            // NOTE: Watermark "SNAKE 3D" text in center floor has been COMPLETELY REMOVED for clean gameplay!
+
+            // 3. Draw Foods
+            if (food) drawFood(food);
+
+            // 4. Draw Black Orb Diamond (Nâng Cấp Hình Tròn Màu Đen Nhấp Nháy Chậm Ăn Điểm To)
+            if (diamond) drawBlackOrbDiamond(diamond);
+
+            // 5. Draw Smooth Animated 3D Snake
+            drawSmoothSnake();
+
+            // 6. Draw Particles
+            updateAndDrawParticles();
+        }
+
+        // --- DRAW FOOD ---
+        function drawFood(f) {
+            const cx = (f.x + 0.5) * cellWidth;
+            const cy = (f.y + 0.5) * cellHeight;
+            const radius = (Math.min(cellWidth, cellHeight) / 2.3) * (f.isBig ? 1.25 : 0.9);
+
+            ctx.save();
+            // Drop Shadow 3D
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetY = 5;
+
+            // Sphere Gradient
+            const grad = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.3, radius * 0.1, cx, cy, radius);
+            if (f.isBig) {
+                grad.addColorStop(0, '#fef08a');
+                grad.addColorStop(0.5, '#f59e0b');
+                grad.addColorStop(1, '#92400e');
+            } else {
+                grad.addColorStop(0, '#fca5a5');
+                grad.addColorStop(0.5, '#ef4444');
+                grad.addColorStop(1, '#991b1b');
+            }
+
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Top Leaf Accent
+            ctx.fillStyle = '#22c55e';
+            ctx.beginPath();
+            ctx.ellipse(cx + radius * 0.2, cy - radius * 0.8, radius * 0.35, radius * 0.18, Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // --- NÂNG CẤP KIM CƯƠNG: BLACK ORB DIAMOND (Hình tròn màu đen nhấp nháy chậm) ---
+        function drawBlackOrbDiamond(d) {
+            const cx = (d.x + 0.5) * cellWidth;
+            const cy = (d.y + 0.5) * cellHeight;
+            const baseRadius = (Math.min(cellWidth, cellHeight) / 2.1);
+
+            // Slow Pulsing Scale Effect (Nhấp nháy chậm ma mị)
+            const pulse = Math.sin(animTicks * 0.05) * 0.12 + 1.0;
+            const radius = baseRadius * pulse;
+
+            ctx.save();
+
+            // Mystic Slow Pulsing Outer Glow Aura
+            const glowOpacity = (Math.sin(animTicks * 0.05) + 1) / 2;
+            ctx.shadowColor = `rgba(56, 189, 248, ${0.4 + glowOpacity * 0.5})`;
+            ctx.shadowBlur = 18 + glowOpacity * 12;
+
+            // Outer Radiant Ring
+            ctx.strokeStyle = `rgba(56, 189, 248, ${0.3 + glowOpacity * 0.5})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius * 1.25, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Black Orb Sphere Gradient (Tròn Màu Đen Mịn Màng)
+            const grad = ctx.createRadialGradient(cx - radius * 0.35, cy - radius * 0.35, radius * 0.05, cx, cy, radius);
+            grad.addColorStop(0, '#475569');   // Glossy highlight top-left
+            grad.addColorStop(0.3, '#1e293b'); // Dark Slate
+            grad.addColorStop(0.7, '#0f172a'); // Very dark
+            grad.addColorStop(1, '#000000');   // Pure Pitch Black edge
+
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Inner Metallic Sparkle / Core Reflection
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.6 + glowOpacity * 0.3})`;
+            ctx.beginPath();
+            ctx.arc(cx - radius * 0.3, cy - radius * 0.3, radius * 0.22, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // --- DRAW SMOOTH SNAKE (INTERPOLATED 60FPS MOVEMENT & VIVID ANIMATION) ---
+        function drawSmoothSnake() {
+            if (snake.length === 0) return;
+
+            // Compute interpolated pixel coordinates for each segment
+            const interpolatedPoints = [];
+
+            for (let i = 0; i < snake.length; i++) {
+                const curr = snake[i];
+                const prev = prevSnake[i] || curr;
+
+                // Interpolate grid x, y
+                let interpX = prev.x + (curr.x - prev.x) * renderProgress;
+                let interpY = prev.y + (curr.y - prev.y) * renderProgress;
+
+                // Handle teleport edge wrap smooth transition
+                if (Math.abs(curr.x - prev.x) > 1) interpX = curr.x;
+                if (Math.abs(curr.y - prev.y) > 1) interpY = curr.y;
+
+                // Convert to screen pixels
+                const px = (interpX + 0.5) * cellWidth;
+                const py = (interpY + 0.5) * cellHeight;
+
+                // Add subtle organic sine-wave undulating motion (uốn lượn sinh động)
+                const wave = Math.sin(animTicks * 0.15 + i * 0.5) * (i > 0 ? 2.5 : 0);
+                
+                interpolatedPoints.push({
+                    x: px + (dir.y !== 0 ? wave : 0),
+                    y: py + (dir.x !== 0 ? wave : 0)
+                });
+            }
+
+            const baseRadius = Math.min(cellWidth, cellHeight) * 0.45;
+
+            // 1. Draw Snake Floor Shadows (Hiệu ứng bóng đổ 3D)
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+            for (let i = interpolatedPoints.length - 1; i >= 0; i--) {
+                const pt = interpolatedPoints[i];
+                const rRatio = 1 - (i / interpolatedPoints.length) * 0.35;
+                ctx.beginPath();
+                ctx.arc(pt.x + 4, pt.y + 6, baseRadius * rRatio, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+
+            // 2. Draw Snake Body Segments (Thân rắn 3D mượt mà)
+            for (let i = interpolatedPoints.length - 1; i >= 1; i--) {
+                const pt = interpolatedPoints[i];
+                const rRatio = 1 - (i / interpolatedPoints.length) * 0.38;
+                const radius = baseRadius * rRatio;
+
+                ctx.save();
+                const grad = ctx.createRadialGradient(
+                    pt.x - radius * 0.3, pt.y - radius * 0.3, radius * 0.1,
+                    pt.x, pt.y, radius
+                );
+
+                // Alternating emerald scale color pattern
+                if (i % 2 === 0) {
+                    grad.addColorStop(0, '#a7f3d0');
+                    grad.addColorStop(0.4, '#10b981');
+                    grad.addColorStop(1, '#047857');
+                } else {
+                    grad.addColorStop(0, '#6ee7b7');
+                    grad.addColorStop(0.4, '#059669');
+                    grad.addColorStop(1, '#064e3b');
+                }
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Shiny specular highlights on scales
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+                ctx.beginPath();
+                ctx.arc(pt.x - radius * 0.25, pt.y - radius * 0.25, radius * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            // 3. Draw Animated Snake Head (Đầu rắn 3D sống động + Mắt mở to + Lưỡi thè ra thụt vào)
+            const head = interpolatedPoints[0];
+            const headRadius = baseRadius * 1.1;
+
+            ctx.save();
+            ctx.translate(head.x, head.y);
+
+            // Angle rotation based on current direction
+            const angle = Math.atan2(dir.y, dir.x);
+            ctx.rotate(angle);
+
+            // Dynamic head squish/stretch pulse
+            const headGrad = ctx.createRadialGradient(-headRadius * 0.2, -headRadius * 0.2, headRadius * 0.1, 0, 0, headRadius);
+            headGrad.addColorStop(0, '#d1fae5');
+            headGrad.addColorStop(0.4, '#10b981');
+            headGrad.addColorStop(1, '#064e3b');
+
+            ctx.fillStyle = headGrad;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, headRadius * 1.15, headRadius * 0.95, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 3D Eyes with Blinking pupils
+            const eyeOffsetY = headRadius * 0.42;
+            const eyeOffsetX = headRadius * 0.3;
+            const eyeRadius = headRadius * 0.32;
+
+            // Draw Both Eyes
+            [-eyeOffsetY, eyeOffsetY].forEach(ey => {
+                // Outer Eye White
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(eyeOffsetX, ey, eyeRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Pupil (Tròng mắt đen óng ánh)
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.arc(eyeOffsetX + 1.5, ey, eyeRadius * 0.55, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Catchlight in Eye
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(eyeOffsetX + 3, ey - 1.5, eyeRadius * 0.22, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Animated Flickering Snake Tongue (Lưỡi rắn thè ra thụt vào)
+            const tongueFlicker = Math.sin(animTicks * 0.25);
+            if (tongueFlicker > 0.1) {
+                const tongueLen = headRadius * (0.8 + tongueFlicker * 0.4);
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 2.5;
+                ctx.lineCap = 'round';
+
+                ctx.beginPath();
+                ctx.moveTo(headRadius * 1.1, 0);
+                ctx.lineTo(headRadius * 1.1 + tongueLen, 0);
+                // Forked Tongue Tip
+                ctx.lineTo(headRadius * 1.1 + tongueLen + 4, -4);
+                ctx.moveTo(headRadius * 1.1 + tongueLen, 0);
+                ctx.lineTo(headRadius * 1.1 + tongueLen + 4, 4);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        // --- GAME OVER & UI HANDLERS ---
+        function gameOver() {
+            gameRunning = false;
+            sound.playGameOver();
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('snake_3d_highscore', highScore);
+                document.getElementById('highscore-text').textContent = highScore;
+            }
+
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('final-highscore').textContent = highScore;
+            document.getElementById('score-summary').classList.remove('hidden');
+
+            document.getElementById('overlay-title').textContent = 'GAME OVER!';
+            document.getElementById('overlay-subtitle').textContent = 'Rắn đã va chạm! Hãy thử lại để vượt kỷ lục.';
+            document.getElementById('overlay-menu').classList.remove('hidden');
+        }
+
+        function updateScoreUI() {
+            document.getElementById('score-text').textContent = score;
+        }
+
+        function togglePause() {
+            if (!gameRunning) return;
+            isPaused = !isPaused;
+            const banner = document.getElementById('pause-banner');
+            const icon = document.getElementById('pause-icon');
+
+            if (isPaused) {
+                banner.classList.remove('hidden');
+                icon.className = 'fa-solid fa-play';
+            } else {
+                banner.classList.add('hidden');
+                icon.className = 'fa-solid fa-pause';
+            }
+        }
+
+        // --- CONTROLS & EVENT LISTENERS ---
+        function handleDirectionInput(newX, newY) {
+            // Prevent 180-degree immediate reverse turn
+            if (newX !== -dir.x || newY !== -dir.y) {
+                nextDir = { x: newX, y: newY };
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            switch (e.key) {
+                case 'ArrowUp': case 'w': case 'W':
+                    handleDirectionInput(0, -1); break;
+                case 'ArrowDown': case 's': case 'S':
+                    handleDirectionInput(0, 1); break;
+                case 'ArrowLeft': case 'a': case 'A':
+                    handleDirectionInput(-1, 0); break;
+                case 'ArrowRight': case 'd': case 'D':
+                    handleDirectionInput(1, 0); break;
+                case ' ':
+                    togglePause(); break;
+            }
+        });
+
+        // Touch Control Buttons for Mobile
+        document.getElementById('btn-touch-up').addEventListener('click', () => handleDirectionInput(0, -1));
+        document.getElementById('btn-touch-down').addEventListener('click', () => handleDirectionInput(0, 1));
+        document.getElementById('btn-touch-left').addEventListener('click', () => handleDirectionInput(-1, 0));
+        document.getElementById('btn-touch-right').addEventListener('click', () => handleDirectionInput(1, 0));
+
+        // Touch Swipe Gestures on Canvas
+        let touchStartX = 0, touchStartY = 0;
+        canvas.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        canvas.addEventListener('touchend', (e) => {
+            if (!touchStartX || !touchStartY) return;
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            const dy = e.changedTouches[0].clientY - touchStartY;
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (Math.abs(dx) > 20) handleDirectionInput(dx > 0 ? 1 : -1, 0);
+            } else {
+                if (Math.abs(dy) > 20) handleDirectionInput(0, dy > 0 ? 1 : -1);
+            }
+            touchStartX = 0; touchStartY = 0;
+        }, { passive: true });
+
+        // HUD & Modal Controls
+        document.getElementById('btn-play-start').addEventListener('click', () => {
+            freeMode = false;
+            document.getElementById('overlay-menu').classList.add('hidden');
+            initGame();
+        });
+
+        document.getElementById('btn-free-mode').addEventListener('click', () => {
+            freeMode = true;
+            document.getElementById('overlay-menu').classList.add('hidden');
+            initGame();
+        });
+
+        document.getElementById('btn-close-overlay').addEventListener('click', () => {
+            document.getElementById('overlay-menu').classList.add('hidden');
+        });
+
+        document.getElementById('btn-pause').addEventListener('click', togglePause);
+
+        document.getElementById('btn-settings').addEventListener('click', () => {
+            document.getElementById('modal-settings').classList.remove('hidden');
+            isPaused = true;
+        });
+
+        document.getElementById('btn-close-settings').addEventListener('click', () => {
+            document.getElementById('modal-settings').classList.add('hidden');
+            isPaused = false;
+        });
+
+        document.getElementById('btn-change-theme').addEventListener('click', switchTheme);
+
+        document.getElementById('btn-restart-game').addEventListener('click', () => {
+            document.getElementById('modal-settings').classList.add('hidden');
+            initGame();
+        });
+
+        document.getElementById('btn-exit-game').addEventListener('click', () => {
+            document.getElementById('modal-settings').classList.add('hidden');
+            document.getElementById('overlay-menu').classList.remove('hidden');
+            gameRunning = false;
+        });
+
+        // Difficulty Selector Buttons
+        document.querySelectorAll('.btn-diff').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.btn-diff').forEach(b => b.classList.add('opacity-70'));
+                e.target.classList.remove('opacity-70');
+                gameSpeed = parseInt(e.target.getAttribute('data-speed'));
+            });
+        });
+
+        // Audio & Wall Toggles
+        document.getElementById('toggle-sound').addEventListener('change', (e) => {
+            sound.enabled = e.target.checked;
+        });
+        document.getElementById('toggle-wall').addEventListener('change', (e) => {
+            wallCollision = e.target.checked;
+        });
+
+        // --- WINDOW LOAD INITIALIZATION ---
+        window.onload = function () {
+            resizeCanvas();
+            requestAnimationFrame(loop);
+        };
+    </script>
+</body>
+</html>

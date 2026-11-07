@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Casino Bet UI</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    /* Thông báo Toast */
+    .toast-msg {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(40, 167, 69, 0.95);
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 30px;
+      font-weight: 800;
+      font-size: 15px;
+      box-shadow: 0 4px 15px rgba(0, 255, 100, 0.4);
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+      border: 1px solid #75ec91;
+    }
+
+    .toast-msg.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Khu vực 2 Cửa Cược */
+    .bet-sides-container {
+      display: flex;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    .side-box {
+      width: 220px;
+      height: 260px;
+      background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+      border: 2px solid #334155;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 15px;
+      position: relative;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    .side-box.active {
+      border-color: #f59e0b;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+    }
+
+    /* Logo đại diện */
+    .side-logo {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      background: linear-gradient(135deg, #334155, #1e293b);
+      border: 2px solid #475569;
+      box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.2);
+    }
+
+    .side-dragon .side-logo {
+      background: linear-gradient(135deg, #ef4444, #7f1d1d);
+      border-color: #fca5a5;
+    }
+
+    .side-tiger .side-logo {
+      background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+      border-color: #93c5fd;
+    }
+
+    .side-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    /* Ô hiển thị số tiền cược bên trong logo/cửa */
+    .bet-amount-display {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid #f59e0b;
+      color: #fbbf24;
+      font-size: 16px;
+      font-weight: 800;
+      padding: 8px 16px;
+      border-radius: 20px;
+      min-width: 120px;
+      text-align: center;
+      box-shadow: inset 0 0 8px rgba(245, 158, 11, 0.4);
+    }
+
+    .bet-amount-display.hidden {
+      display: none;
+    }
+
+    /* Nút Cược hiển thị bên ngoài ô số 0 */
+    .btn-trigger-bet {
+      background: linear-gradient(180deg, #f59e0b, #d97706);
+      color: #fff;
+      border: 1.5px solid #fef08a;
+      padding: 8px 24px;
+      font-size: 14px;
+      font-weight: 900;
+      border-radius: 18px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(217, 119, 6, 0.4);
+      transition: transform 0.1s;
+    }
+
+    .btn-trigger-bet:active {
+      transform: scale(0.95);
+    }
+
+    .btn-trigger-bet.hidden {
+      display: none;
+    }
+
+    /* BANNER PHÍM CHIP CƯỢC */
+    .chip-panel-real {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translate(-50%, 0);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      background: rgba(15, 23, 42, 0.95) !important;
+      border: 1px solid #334155 !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important;
+      padding: 14px 24px 16px 24px;
+      border-radius: 20px;
+      z-index: 100;
+      transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity: 1;
+    }
+
+    .chip-panel-real.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 50px);
+    }
+
+    .chip-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 560px;
+    }
+
+    .chip-btn {
+      width: 60px;
+      height: 38px;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #ffb300 0%, #ff8000 60%, #cc5200 100%);
+      border: 1.5px solid #ffe066;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 900;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.8), 0 4px 8px #000;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+      transition: transform 0.1s, box-shadow 0.1s;
+      user-select: none;
+    }
+
+    .chip-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 0 12px #ffea00;
+    }
+
+    .chip-actions {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      justify-content: center;
+      margin-top: 4px;
+    }
+
+    .chip-actions button {
+      padding: 8px 22px;
+      border-radius: 18px;
+      font-weight: 900;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid #fff;
+      color: #fff;
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.6);
+      transition: transform 0.1s, filter 0.1s;
+    }
+
+    .chip-actions button:active {
+      transform: scale(0.95);
+    }
+
+    .btn-action-x2 {
+      background: linear-gradient(180deg, #3a7bd5, #3a6073);
+    }
+
+    .btn-action-bet {
+      background: linear-gradient(180deg, #28a745, #1e7e34);
+    }
+
+    .btn-action-cancel {
+      background: linear-gradient(180deg, #dc3545, #bd2130);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Thông báo Toast -->
+  <div class="toast-msg" id="toast">Đặt cược thành công!</div>
+
+  <!-- 2 CỬA CƯỢC VỚI LOGO -->
+  <div class="bet-sides-container">
+    <!-- Cửa Rồng -->
+    <div class="side-box side-dragon" id="side-dragon">
+      <div class="side-logo">🐉</div>
+      <div class="side-title">CỬA RỒNG</div>
+      
+      <!-- Số 0 xuất hiện bên trong khi bấm cược -->
+      <div class="bet-amount-display hidden" id="display-dragon">0</div>
+      
+      <!-- Nút Cược nằm ngoài ô số 0 -->
+      <button class="btn-trigger-bet" id="btn-bet-dragon" onclick="openChipPanel('dragon')">CƯỢC</button>
+    </div>
+
+    <!-- Cửa Hổ -->
+    <div class="side-box side-tiger" id="side-tiger">
+      <div class="side-logo">🐯</div>
+      <div class="side-title">CỬA HỔ</div>
+
+      <!-- Số 0 xuất hiện bên trong khi bấm cược -->
+      <div class="bet-amount-display hidden" id="display-tiger">0</div>
+
+      <!-- Nút Cược nằm ngoài ô số 0 -->
+      <button class="btn-trigger-bet" id="btn-bet-tiger" onclick="openChipPanel('tiger')">CƯỢC</button>
+    </div>
+  </div>
+
+  <!-- BANNER PHÍM CHIP CƯỢC -->
+  <div class="chip-panel-real hidden" id="chip-panel">
+    <div class="chip-list">
+      <div class="chip-btn" onclick="addChip(1000)">1K</div>
+      <div class="chip-btn" onclick="addChip(10000)">10K</div>
+      <div class="chip-btn" onclick="addChip(50000)">50K</div>
+      <div class="chip-btn" onclick="addChip(100000)">100K</div>
+      <div class="chip-btn" onclick="addChip(500000)">500K</div>
+      <div class="chip-btn" onclick="addChip(1000000)">1M</div>
+      <div class="chip-btn" onclick="addChip(10000000)">10M</div>
+      <div class="chip-btn" onclick="addChip(50000000)">50M</div>
+    </div>
+
+    <div class="chip-actions">
+      <button class="btn-action-x2" onclick="allInBet()">ALL IN</button>
+      <button class="btn-action-bet" onclick="confirmBet()">ĐẶT CƯỢC</button>
+      <button class="btn-action-cancel" onclick="cancelBet()">HỦY</button>
+    </div>
+  </div>
+
+  <script>
+    // Quản lý trạng thái cược
+    let currentSide = null; // 'dragon' hoặc 'tiger'
+    const betAmounts = {
+      dragon: 0,
+      tiger: 0
+    };
+    
+    // Giả lập số dư người dùng cho tính năng ALL IN
+    const userBalance = 100000000; // 100M
+
+    // Định dạng số thành tiền tệ (VD: 1,000,000)
+    function formatCurrency(amount) {
+      return amount.toLocaleString('vi-VN');
+    }
+
+    // 1. Khi ấn chữ "CƯỢC" bên ngoài -> Mở bảng chip & hiển thị ô số 0 thực tế bên trong cửa
+    function openChipPanel(side) {
+      currentSide = side;
+
+      // Đánh dấu cửa đang chọn
+      document.querySelectorAll('.side-box').forEach(box => box.classList.remove('active'));
+      document.getElementById(`side-${side}`).classList.add('active');
+
+      // Ẩn nút "CƯỢC" bên ngoài, Hiện ô số cược bên trong
+      document.getElementById(`btn-bet-${side}`).classList.add('hidden');
+      const displayElem = document.getElementById(`display-${side}`);
+      displayElem.classList.remove('hidden');
+      displayElem.innerText = formatCurrency(betAmounts[side]);
+
+      // Hiện bảng chip bên ngoài
+      document.getElementById('chip-panel').classList.remove('hidden');
+    }
+
+    // 2. Khi ấn chọn chip -> Tự động cộng số tiền cược vào ô số 0
+    function addChip(amount) {
+      if (!currentSide) return;
+
+      betAmounts[currentSide] += amount;
+      document.getElementById(`display-${currentSide}`).innerText = formatCurrency(betAmounts[currentSide]);
+    }
+
+    // Nút ALL IN
+    function allInBet() {
+      if (!currentSide) return;
+      betAmounts[currentSide] = userBalance;
+      document.getElementById(`display-${currentSide}`).innerText = formatCurrency(betAmounts[currentSide]);
+    }
+
+    // 3. Khi ấn "ĐẶT CƯỢC" -> Thông báo thành công 2 giây thực tế, ẩn bảng chip & hiển thị lại nút cược
+    function confirmBet() {
+      if (!currentSide) return;
+
+      // Hiển thị thông báo Toast trong 2 giây
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+
+      // Ẩn bảng chip
+      document.getElementById('chip-panel').classList.add('hidden');
+
+      // Hiện lại nút CƯỢC bên ngoài
+      document.getElementById(`btn-bet-${currentSide}`).classList.remove('hidden');
+      
+      // Bỏ kích hoạt khung
+      document.querySelectorAll('.side-box').forEach(box => box.classList.remove('active'));
+      currentSide = null;
+    }
+
+    // 4. Khi ấn "HỦY" -> Reset cửa hiện tại
+    function cancelBet() {
+      if (!currentSide) return;
+
+      betAmounts[currentSide] = 0;
+      const displayElem = document.getElementById(`display-${currentSide}`);
+      displayElem.innerText = '0';
+      displayElem.classList.add('hidden');
+
+      // Hiện lại nút cược & ẩn bảng chip
+      document.getElementById(`btn-bet-${currentSide}`).classList.remove('hidden');
+      document.getElementById('chip-panel').classList.add('hidden');
+      document.querySelectorAll('.side-box').forEach(box => box.classList.remove('active'));
+      
+      currentSide = null;
+    }
+  </script>
+</body>
+</html>
